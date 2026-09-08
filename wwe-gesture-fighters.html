@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WWE Gesture Fighters - Interactive 1v1 Battle</title>
+  <style>
+    :root {
+      --bg-dark: #0a0b10;
+      --wwe-gold: #ffd700;
+      --wwe-red: #ff2a2a;
+      --wwe-blue: #0088ff;
+      --card-bg: rgba(20, 25, 40, 0.85);
+      --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 50% 20%, rgba(255, 42, 42, 0.15) 0%, transparent 60%),
+        radial-gradient(circle at 80% 80%, rgba(0, 136, 255, 0.15) 0%, transparent 60%);
+      color: #fff;
+      font-family: var(--font-family);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      background: linear-gradient(90deg, #ff2a2a, #ffd700, #0088ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    }
+
+    header p {
+      color: #aaa;
+      font-size: 1rem;
+      margin-top: 5px;
+    }
+
+    .main-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      width: 100%;
+      max-width: 1200px;
+      justify-content: center;
+    }
+
+    .arena-card {
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      padding: 20px;
+      flex: 1 1 700px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .hud-header {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 15px;
+      gap: 20px;
+    }
+
+    .fighter-hud {
+      flex: 1;
+      background: rgba(0,0,0,0.4);
+      padding: 10px 15px;
+      border-radius: 10px;
+      border: 1px solid #333;
+    }
+
+    .fighter-hud.p1 { border-left: 4px solid var(--wwe-red); }
+    .fighter-hud.p2 { border-right: 4px solid var(--wwe-blue); text-align: right; }
+
+    .fighter-name {
+      font-weight: bold;
+      font-size: 1.2rem;
+      color: var(--wwe-gold);
+    }
+
+    .health-bar-bg {
+      background: #222;
+      height: 18px;
+      border-radius: 9px;
+      overflow: hidden;
+      margin-top: 6px;
+      border: 1px solid #444;
+    }
+
+    .health-bar-fill {
+      height: 100%;
+      width: 100%;
+      transition: width 0.3s ease;
+    }
+
+    .p1 .health-bar-fill { background: linear-gradient(90deg, #ff2a2a, #ff7700); }
+    .p2 .health-bar-fill { background: linear-gradient(90deg, #0088ff, #00d4ff); margin-left: auto; }
+
+    .special-bar-bg {
+      background: #111;
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .special-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: #ffd700;
+      transition: width 0.3s ease;
+    }
+
+    #gameCanvas {
+      background: #151824;
+      border-radius: 12px;
+      border: 2px solid #2a3048;
+      width: 100%;
+      max-width: 800px;
+      height: 400px;
+    }
+
+    .control-panel {
+      flex: 1 1 320px;
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      color: var(--wwe-gold);
+      border-bottom: 1px solid rgba(255,215,0,0.2);
+      padding-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .character-select {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .char-btn {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 10px;
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s;
+    }
+
+    .char-btn:hover {
+      background: rgba(255,215,0,0.15);
+      border-color: var(--wwe-gold);
+    }
+
+    .char-btn.selected {
+      border-color: var(--wwe-gold);
+      background: rgba(255,215,0,0.25);
+      box-shadow: 0 0 10px rgba(255,215,0,0.4);
+    }
+
+    .char-avatar {
+      font-size: 2rem;
+    }
+
+    .gesture-triggers {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .btn-action {
+      background: linear-gradient(135deg, #ff2a2a, #aa0000);
+      color: #fff;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: transform 0.1s, box-shadow 0.2s;
+    }
+
+    .btn-action:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(255, 42, 42, 0.4);
+    }
+
+    .btn-action.special {
+      background: linear-gradient(135deg, #ffd700, #ff8c00);
+      color: #111;
+    }
+
+    .btn-action.special:hover {
+      box-shadow: 0 5px 15px rgba(255, 215, 0, 0.5);
+    }
+
+    .log-box {
+      background: rgba(0,0,0,0.5);
+      border-radius: 8px;
+      padding: 10px;
+      height: 100px;
+      overflow-y: auto;
+      font-size: 0.85rem;
+      font-family: monospace;
+      color: #88ff88;
+      border: 1px solid #333;
+    }
+
+    .log-entry { margin-bottom: 4px; }
+
+    .gesture-hint {
+      background: rgba(255,255,255,0.03);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🤼 WWE Gesture Fighters</h1>
+    <p>Perform Hand Gestures or Trigger Moves to Unleash Signature WWE Finisher Attacks!</p>
+  </header>
+
+  <div class="main-container">
+    
+    <!-- Battle Arena Canvas & HUD -->
+    <div class="arena-card">
+      <div class="hud-header">
+        <div class="fighter-hud p1">
+          <div class="fighter-name" id="p1Name">John Cena</div>
+          <div class="health-bar-bg"><div class="health-bar-fill" id="p1Health"></div></div>
+          <div class="special-bar-bg"><div class="special-bar-fill" id="p1Special"></div></div>
+        </div>
+
+        <div style="align-self: center; font-size: 1.5rem; font-weight: 900; color: var(--wwe-gold);">VS</div>
+
+        <div class="fighter-hud p2">
+          <div class="fighter-name" id="p2Name">The Rock</div>
+          <div class="health-bar-bg"><div class="health-bar-fill" id="p2Health"></div></div>
+          <div class="special-bar-bg"><div class="special-bar-fill" id="p2Special"></div></div>
+        </div>
+      </div>
+
+      <canvas id="gameCanvas" width="800" height="400"></canvas>
+    </div>
+
+    <!-- Controls & Roster Selection -->
+    <div class="control-panel">
+      <div class="section-title">Select Player 1 WWE Superstar</div>
+      <div class="character-select">
+        <button class="char-btn selected" onclick="selectCharacter('cena')">
+          <span class="char-avatar">🧢</span>
+          <span>John Cena</span>
+        </button>
+        <button class="char-btn" onclick="selectCharacter('rock')">
+          <span class="char-avatar">🤨</span>
+          <span>The Rock</span>
+        </button>
+        <button class="char-btn" onclick="selectCharacter('undertaker')">
+          <span class="char-avatar">⚰️</span>
+          <span>Undertaker</span>
+        </button>
+        <button class="char-btn" onclick="selectCharacter('reigns')">
+          <span class="char-avatar">☝️</span>
+          <span>Roman Reigns</span>
+        </button>
+      </div>
+
+      <div class="section-title">Gesture Controls / Actions</div>
+      <div class="gesture-triggers">
+        <button class="btn-action" onclick="performAction('punch')">👊 Jab / Quick Punch (Gesture: Open Palm)</button>
+        <button class="btn-action" onclick="performAction('kick')">🦵 Heavy Boot Kick (Gesture: Point Index)</button>
+        <button class="btn-action special" onclick="performAction('finisher')">⚡ SIGNATURE FINISHER (Gesture: Raised Fist)</button>
+      </div>
+
+      <div class="gesture-hint">
+        💡 <strong>Interactive Gesture Map:</strong><br/>
+        • 🖐️ <strong>Open Palm:</strong> Standard Combo Attack<br/>
+        • ☝️ <strong>Point Finger:</strong> Heavy Kick Strike<br/>
+        • ✊ <strong>Fist / Hold:</strong> Unleash Special Finisher Attack!
+      </div>
+
+      <div class="section-title">Match Commentary Log</div>
+      <div class="log-box" id="logBox">
+        <div class="log-entry">🔔 WELCOME TO WWE GESTURE FIGHTERS!</div>
+        <div class="log-entry">Select your Superstar and trigger attacks!</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // WWE Superstars Roster Data
+    const ROSTER = {
+      cena: {
+        name: "John Cena",
+        avatar: "🧢",
+        color: "#00ccff",
+        accent: "#0066ff",
+        finisher: "Attitude Adjustment (AA)",
+        quote: "YOU CAN'T SEE ME! 👋"
+      },
+      rock: {
+        name: "The Rock",
+        avatar: "🤨",
+        color: "#ff9900",
+        accent: "#cc6600",
+        finisher: "Rock Bottom & People's Elbow",
+        quote: "IF YOU SMELL WHAT THE ROCK IS COOKIN'! 🤨"
+      },
+      undertaker: {
+        name: "Undertaker",
+        avatar: "⚰️",
+        color: "#9933ff",
+        accent: "#4c0099",
+        finisher: "Tombstone Piledriver",
+        quote: "REST IN PEACE! ⚰️"
+      },
+      reigns: {
+        name: "Roman Reigns",
+        avatar: "☝️",
+        color: "#ff2a2a",
+        accent: "#990000",
+        finisher: "Spear & Superman Punch",
+        quote: "ACKNOWLEDGE ME! ☝️"
+      }
+    };
+
+    let p1Char = 'cena';
+    let p2Char = 'rock';
+
+    let p1State = { hp: 100, special: 0, x: 200, action: 'idle', animTimer: 0 };
+    let p2State = { hp: 100, special: 0, x: 600, action: 'idle', animTimer: 0 };
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const logBox = document.getElementById('logBox');
+
+    function addLog(msg) {
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.innerText = msg;
+      logBox.appendChild(entry);
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function selectCharacter(charKey) {
+      p1Char = charKey;
+      document.querySelectorAll('.char-btn').forEach(btn => btn.classList.remove('selected'));
+      event.currentTarget.classList.add('selected');
+      
+      document.getElementById('p1Name').innerText = ROSTER[p1Char].name;
+      addLog(`🔥 Selected Player 1: ${ROSTER[p1Char].name}! "${ROSTER[p1Char].quote}"`);
+      resetMatch();
+    }
+
+    function resetMatch() {
+      p1State.hp = 100;
+      p1State.special = 0;
+      p1State.x = 200;
+      
+      p2State.hp = 100;
+      p2State.special = 0;
+      p2State.x = 600;
+
+      updateHUD();
+    }
+
+    function updateHUD() {
+      document.getElementById('p1Health').style.width = p1State.hp + '%';
+      document.getElementById('p2Health').style.width = p2State.hp + '%';
+
+      document.getElementById('p1Special').style.width = p1State.special + '%';
+      document.getElementById('p2Special').style.width = p2State.special + '%';
+    }
+
+    function performAction(type) {
+      if (p1State.hp <= 0 || p2State.hp <= 0) {
+        resetMatch();
+        addLog('🔄 Match Restarted!');
+        return;
+      }
+
+      if (type === 'punch') {
+        p1State.action = 'punch';
+        p1State.animTimer = 15;
+        p2State.hp = Math.max(0, p2State.hp - 10);
+        p1State.special = Math.min(100, p1State.special + 25);
+        addLog(`👊 ${ROSTER[p1Char].name} hits a Quick Jab! (-10 HP)`);
+      } else if (type === 'kick') {
+        p1State.action = 'kick';
+        p1State.animTimer = 20;
+        p2State.hp = Math.max(0, p2State.hp - 18);
+        p1State.special = Math.min(100, p1State.special + 35);
+        addLog(`🦵 ${ROSTER[p1Char].name} connects with a Big Boot! (-18 HP)`);
+      } else if (type === 'finisher') {
+        if (p1State.special < 100) {
+          addLog(`⚠️ Finisher meter not full! (${p1State.special}%/100%)`);
+          return;
+        }
+        p1State.action = 'finisher';
+        p1State.animTimer = 35;
+        p2State.hp = Math.max(0, p2State.hp - 45);
+        p1State.special = 0;
+        addLog(`⚡ SIGNATURE FINISHER! ${ROSTER[p1Char].name} executes ${ROSTER[p1Char].finisher}! (-45 HP)`);
+      }
+
+      // AI P2 Counter-attack chance
+      if (p2State.hp > 0 && Math.random() > 0.4) {
+        setTimeout(() => {
+          if (p2State.hp > 0) {
+            p2State.action = 'punch';
+            p2State.animTimer = 15;
+            p1State.hp = Math.max(0, p1State.hp - 12);
+            addLog(`⚡ ${ROSTER[p2Char].name} counters with a strike! (-12 HP)`);
+            updateHUD();
+          }
+        }, 400);
+      }
+
+      updateHUD();
+
+      if (p2State.hp <= 0) {
+        addLog(`🏆 RING THE BELL! ${ROSTER[p1Char].name} WINS THE MATCH! 👑`);
+      } else if (p1State.hp <= 0) {
+        addLog(`💀 ${ROSTER[p2Char].name} DEFEATED YOU! MATCH OVER!`);
+      }
+    }
+
+    // Canvas Renderer Loop
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw Ring Floor & Ropes
+      ctx.fillStyle = '#1e2436';
+      ctx.fillRect(0, 320, canvas.width, 80);
+
+      // Ring Ropes
+      ctx.strokeStyle = '#ff2a2a';
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(0, 240); ctx.lineTo(800, 240); ctx.stroke();
+      ctx.strokeStyle = '#ffffff';
+      ctx.beginPath(); ctx.moveTo(0, 260); ctx.lineTo(800, 260); ctx.stroke();
+      ctx.strokeStyle = '#0088ff';
+      ctx.beginPath(); ctx.moveTo(0, 280); ctx.lineTo(800, 280); ctx.stroke();
+
+      // Draw Player 1
+      drawFighter(p1State.x, 230, ROSTER[p1Char], p1State, false);
+
+      // Draw Player 2
+      drawFighter(p2State.x, 230, ROSTER[p2Char], p2State, true);
+
+      // Update Animation Timers
+      if (p1State.animTimer > 0) p1State.animTimer--;
+      else p1State.action = 'idle';
+
+      if (p2State.animTimer > 0) p2State.animTimer--;
+      else p2State.action = 'idle';
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function drawFighter(x, y, charInfo, state, isFlipped) {
+      ctx.save();
+      ctx.translate(x, y);
+
+      if (isFlipped) ctx.scale(-1, 1);
+
+      // Action offsets & dynamic poses
+      let armAngle = 0;
+      let bodyOffset = 0;
+
+      if (state.action === 'punch') {
+        armAngle = 0.8;
+        bodyOffset = 15;
+      } else if (state.action === 'kick') {
+        armAngle = -0.5;
+        bodyOffset = -10;
+      } else if (state.action === 'finisher') {
+        armAngle = 1.5;
+        bodyOffset = 30;
+      }
+
+      // Aura glow during finisher animation
+      if (state.action === 'finisher') {
+        ctx.shadowColor = '#ffd700';
+        ctx.shadowBlur = 25;
+      }
+
+      // Body (Trunk)
+      ctx.fillStyle = charInfo.color;
+      ctx.fillRect(-20 + bodyOffset, -60, 40, 60);
+
+      // Head
+      ctx.fillStyle = '#ffcc99';
+      ctx.beginPath();
+      ctx.arc(0 + bodyOffset, -85, 22, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Character Emoji Icon / Face
+      ctx.font = '24px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(charInfo.avatar, 0 + bodyOffset, -85);
+
+      // Arm Strike
+      ctx.strokeStyle = charInfo.accent;
+      ctx.lineWidth = 12;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(10 + bodyOffset, -50);
+      ctx.lineTo(10 + bodyOffset + Math.cos(armAngle) * 45, -50 - Math.sin(armAngle) * 45);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    // Launch game loop
+    gameLoop();
+  </script>
+</body>
+</html>
