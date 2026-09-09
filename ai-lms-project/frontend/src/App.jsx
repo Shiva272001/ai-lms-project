@@ -184,7 +184,7 @@ function Home() {
           >
             <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-                <div style={{ width: "44px", height: "44px", borderRadius: "var(--radius-sm)", background: item.color, border: `1px solid ${item.borderColor}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px" }}>
+                <div style={{ width: "90px", height: "44px", borderRadius: "var(--radius-sm)", background: item.color, border: `1px solid ${item.borderColor}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px" }}>
                   {item.icon}
                 </div>
                 <span style={{ fontFamily: "var(--font-heading)", fontSize: "10px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "1px", background: "rgba(0, 212, 255, 0.05)", border: "1px solid var(--border-cyan)", padding: "4px 10px", borderRadius: "12px", color: "var(--accent-cyan)" }}>
