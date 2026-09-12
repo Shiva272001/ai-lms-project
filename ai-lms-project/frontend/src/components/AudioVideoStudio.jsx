@@ -17,7 +17,6 @@ function AudioVideoStudio() {
   const [audioDownloadUrl, setAudioDownloadUrl] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [videoDownloadUrl, setVideoDownloadUrl] = useState("");
-  const [pptUrl, setPptUrl] = useState("");
   const [pptDownloadUrl, setPptDownloadUrl] = useState("");
   const [videoScript, setVideoScript] = useState("");
   const [videoNotesActivity, setVideoNotesActivity] = useState("");
@@ -374,7 +373,6 @@ function AudioVideoStudio() {
         if (audDUrl) setAudioDownloadUrl(resolveUrl(audDUrl));
         if (vidUrl) setVideoUrl(resolveUrl(vidUrl));
         if (vidDUrl) setVideoDownloadUrl(resolveUrl(vidDUrl));
-        if (pUrl) setPptUrl(resolveUrl(pUrl));
         if (pDUrl) setPptDownloadUrl(resolveUrl(pDUrl));
 
         // Storyboard
@@ -429,7 +427,7 @@ function AudioVideoStudio() {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
 
-    const clean = text.replace(/[*#_~`\[\]]/g, "").trim();
+    const clean = text.replace(/[*#_~`[\]]/g, "").trim();
     const utterance = new SpeechSynthesisUtterance(clean);
     utterance.rate = rate;
 
