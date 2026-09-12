@@ -318,7 +318,6 @@ function AudioVideoStudio() {
     setAudioDownloadUrl("");
     setVideoUrl("");
     setVideoDownloadUrl("");
-    setPptUrl("");
     setPptDownloadUrl("");
     setVideoScript("");
     setVideoNotesActivity("");
@@ -366,7 +365,6 @@ function AudioVideoStudio() {
         const audDUrl = response.data.audio?.download_url || response.data.audio_download_url;
         const vidUrl = response.data.video?.url || response.data.video_url;
         const vidDUrl = response.data.video?.download_url || response.data.video_download_url;
-        const pUrl = response.data.presentation?.url || response.data.ppt_url;
         const pDUrl = response.data.presentation?.download_url || response.data.ppt_download_url;
 
         if (audUrl) setAudioUrl(resolveUrl(audUrl));
