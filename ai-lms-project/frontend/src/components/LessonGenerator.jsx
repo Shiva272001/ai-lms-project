@@ -51,13 +51,13 @@ function LessonGenerator() {
       if (response.data.image_full_url) {
         setImageUrl(response.data.image_full_url);
       } else if (response.data.image_url) {
-        setImageUrl(`http://127.0.0.1:8000${response.data.image_url}`);
+        setImageUrl(`${api.defaults.baseURL}${response.data.image_url}`);
       }
 
       if (response.data.pdf_download_url) {
         setPdfUrl(response.data.pdf_download_url);
       } else if (response.data.pdf_url) {
-        setPdfUrl(`http://127.0.0.1:8000${response.data.pdf_url}`);
+        setPdfUrl(`${api.defaults.baseURL}${response.data.pdf_url}`);
       }
     } catch (error) {
       console.error("Lesson generation error:", error);
