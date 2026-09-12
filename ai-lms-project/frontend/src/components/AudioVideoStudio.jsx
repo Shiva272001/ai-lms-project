@@ -66,6 +66,7 @@ function AudioVideoStudio() {
 
   const [videoUrl, setVideoUrl] = useState("");
   const [videoDownloadUrl, setVideoDownloadUrl] = useState("");
+  // eslint-disable-next-line
   const [pptUrl, setPptUrl] = useState("");
   const [pptDownloadUrl, setPptDownloadUrl] = useState("");
 
