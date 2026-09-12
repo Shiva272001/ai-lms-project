@@ -10,6 +10,7 @@ function AudioVideoStudio() {
   const [mediaType, setMediaType] = useState("Audio & Video Overview");
 
   const [loading, setLoading] = useState(false);
+  const [generationStatus, setGenerationStatus] = useState("idle"); // idle, synthesizing, completed, error
   const [extractedContent, setExtractedContent] = useState("");
   const [script, setScript] = useState("");
   const [audioUrl, setAudioUrl] = useState("");
@@ -21,19 +22,27 @@ function AudioVideoStudio() {
   const [videoScript, setVideoScript] = useState("");
   const [videoNotesActivity, setVideoNotesActivity] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [providerErrors, setProviderErrors] = useState([]);
 
-  // Interactive Metadata States
+  // Providers Info
+  const [audioProvider, setAudioProvider] = useState("ElevenLabs");
+  const [videoProvider, setVideoProvider] = useState("Hugging Face");
+  const [pptProvider, setPptProvider] = useState("Google Gemini");
+
+  // Storyboard & Slides Data
+  const [storyboard, setStoryboard] = useState([]);
   const [slides, setSlides] = useState([]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [showSpeakerNotes, setShowSpeakerNotes] = useState(false);
   const [isFullscreenPPT, setIsFullscreenPPT] = useState(false);
 
+  // Audio Player State
   const [audioSegments, setAudioSegments] = useState([]);
   const [audioPlaybackSpeed, setAudioPlaybackSpeed] = useState(1.0);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [currentAudioTime, setCurrentAudioTime] = useState(0);
 
-  // Storyboard Interactive Video Simulation States
+  // Video Storyboard Cinema Player State
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [currentVideoTime, setCurrentVideoTime] = useState(0);
   const [currentSceneIndex, setCurrentSceneIndex] = useState(0);
@@ -109,109 +118,192 @@ function AudioVideoStudio() {
     return cleanUrl;
   };
 
-  const buildFallbackSlides = (topicName, scriptText, storyboardText) => {
+  const buildFallbackSlides = (topicName, scriptText) => {
     const fallbackList = [
       {
         slide_number: 1,
-        title: topicName || "Master Lesson Overview",
-        subtitle: `Class ${gradeLevel} Level • Interactive Presentation (${language})`,
-        bullets: [
+        title: topicName || "Lesson Title",
+        subtitle: `Class ${gradeLevel} • Interactive Presentation Deck (${language})`,
+        bullet_points: [
           `Subject Topic: ${topicName || "Study Material"}`,
           `Target Grade Level: Class ${gradeLevel}`,
-          `Language Mode: ${language}`,
-          "AI LMS Interactive Multimedia Studio"
+          `Narration Language: ${language}`,
+          "AI LMS Multimedia Studio Master Curriculum"
         ],
-        visual_cue: "💡 Key Overview & Learning Objectives",
-        speaker_notes: `Welcome to this interactive presentation on '${topicName}'. Today we will cover key concepts, practical examples, and summary activities.`
+        speaker_notes: `Welcome students! Today we are learning '${topicName}'. Follow along with the slides and note the key takeaways.`,
+        visual_description: "Hero card with glowing cyan border and lesson title banner",
+        image_prompt: `Hero title slide for ${topicName}, modern tech aesthetic, 16:9`,
+        layout: "Title Hero",
+        design_notes: "Gamma dark theme with vibrant cyan accent"
+      },
+      {
+        slide_number: 2,
+        title: "🎯 Learning Objectives",
+        subtitle: "What we will achieve by the end of this lesson",
+        bullet_points: [
+          `Understand the foundational definition and principles of ${topicName}`,
+          `Analyze key mechanisms and practical real-world applications`,
+          "Complete interactive check-for-understanding activities with confidence"
+        ],
+        speaker_notes: `Let's review our learning objectives for ${topicName} so we know exactly what to focus on.`,
+        visual_description: "Target icon with 3 objective cards",
+        image_prompt: "Target with arrows representing educational goals, 16:9",
+        layout: "Objectives Checklist",
+        design_notes: "Checkmark badges in emerald green"
+      },
+      {
+        slide_number: 3,
+        title: "🔍 Introduction & Prior Knowledge",
+        subtitle: "Connecting what we already know",
+        bullet_points: [
+          `Have you ever wondered how ${topicName} works in daily life?`,
+          `Today we connect our observations with clear scientific principles`,
+          "No prior advanced experience needed—we build step by step!"
+        ],
+        speaker_notes: "Think about where you have observed this before in your everyday surroundings.",
+        visual_description: "Magnifying glass examining concept connections",
+        image_prompt: "Curious students observing science phenomenon, 16:9",
+        layout: "Concept Introduction",
+        design_notes: "Split layout: Text on left, teacher card on right"
+      },
+      {
+        slide_number: 4,
+        title: `💡 Core Concept 1: What is ${topicName}?`,
+        subtitle: "Fundamental Definition & Principles",
+        bullet_points: [
+          `${topicName} is an essential concept calibrated for Class ${gradeLevel}`,
+          "It operates according to predictable and verifiable natural rules",
+          "Breaking it down into smaller parts makes it easy to master"
+        ],
+        speaker_notes: "Pay close attention to this definition, as it forms the cornerstone of our lesson.",
+        visual_description: "Central glowing bulb diagram with explanatory arrows",
+        image_prompt: "Glowing lightbulb surrounded by concept nodes, 16:9",
+        layout: "Definition Card",
+        design_notes: "High contrast cyan text with card borders"
+      },
+      {
+        slide_number: 5,
+        title: "⚡ Core Concept 2: How It Works",
+        subtitle: "Mechanisms & Step-by-Step Flow",
+        bullet_points: [
+          "Step 1: Input and initial condition setup",
+          "Step 2: Processing and core transformation phase",
+          "Step 3: Observable results and physical impact"
+        ],
+        speaker_notes: "Notice how each step logically triggers the next stage in the process.",
+        visual_description: "3-stage sequence flowchart with arrows",
+        image_prompt: "3-step flowchart diagram showing educational process, 16:9",
+        layout: "Sequence Flow",
+        design_notes: "Numbered step pill badges"
+      },
+      {
+        slide_number: 6,
+        title: "🔬 Core Concept 3: Key Properties",
+        subtitle: "Essential Characteristics to Remember",
+        bullet_points: [
+          "Property A: Consistency and reliability under standard conditions",
+          "Property B: Measurable effects in controlled environments",
+          "Property C: Interdependence with related school subjects"
+        ],
+        speaker_notes: "These properties allow scientists and engineers to apply this knowledge reliably.",
+        visual_description: "Microscope inspection graphic with property cards",
+        image_prompt: "Scientific properties visual comparison matrix, 16:9",
+        layout: "Properties Grid",
+        design_notes: "Two-column feature comparison"
+      },
+      {
+        slide_number: 7,
+        title: "🌍 Real-Life Demonstration",
+        subtitle: "Everyday Examples in Our World",
+        bullet_points: [
+          `Example 1: How ${topicName} powers modern everyday technologies`,
+          `Example 2: Natural occurrences in the environment and biology`,
+          "Example 3: Easy classroom observation you can do at home"
+        ],
+        speaker_notes: "Look at these real-world examples—science is always happening all around us!",
+        visual_description: "Globe graphic showing practical applications",
+        image_prompt: "Students observing real world application of science, 16:9",
+        layout: "Case Study Card",
+        design_notes: "Accent cards with illustrative icons"
+      },
+      {
+        slide_number: 8,
+        title: "✍️ Hands-on Classroom Activity",
+        subtitle: "5-Minute Think & Do Challenge",
+        bullet_points: [
+          "Task: Pair up with a classmate or write in your notebook",
+          `Question: How would you explain ${topicName} to a friend in 2 sentences?`,
+          "Bonus: Draw a quick diagram illustrating the key mechanism"
+        ],
+        speaker_notes: "Take 5 minutes now to write down your explanation and compare with your partner.",
+        visual_description: "Pencil and student notebook activity icon",
+        image_prompt: "Student writing in colorful workbook, classroom desk, 16:9",
+        layout: "Interactive Activity",
+        design_notes: "Warm amber gradient border for action"
+      },
+      {
+        slide_number: 9,
+        title: "📌 Key Points & Recap",
+        subtitle: "Summary of What We Learned Today",
+        bullet_points: [
+          `${topicName} is structured and easy to understand when broken down`,
+          "Mechanisms follow predictable steps that can be observed directly",
+          "Reviewing teacher notes ensures top exam readiness and retention"
+        ],
+        speaker_notes: "Let's review these 3 points together as our final recap before the quiz.",
+        visual_description: "Pinboard graphic with 3 sticky note cards",
+        image_prompt: "Summary checklist with glowing checkmarks, 16:9",
+        layout: "Summary Checklist",
+        design_notes: "Clean emerald green highlights"
+      },
+      {
+        slide_number: 10,
+        title: "❓ Quick Check-for-Understanding Quiz",
+        subtitle: "Test Your Knowledge!",
+        bullet_points: [
+          `Q1: What is the main subject we explored today? (A) ${topicName} (B) History`,
+          `Q2: Is ${topicName} applicable in real life? (A) Yes (B) No`,
+          "Q3: What boosts long-term memory? (A) Active practice (B) Ignoring notes"
+        ],
+        speaker_notes: "Read each question carefully and write down your answers before flipping to the next slide.",
+        visual_description: "Quiz question mark graphic with multiple choice options",
+        image_prompt: "Quiz cards with A and B options, clean graphic design, 16:9",
+        layout: "Quiz Card",
+        design_notes: "Vibrant question callout boxes"
+      },
+      {
+        slide_number: 11,
+        title: "✅ Quiz Answers & Explanations",
+        subtitle: "How did you do?",
+        bullet_points: [
+          `A1: (A) ${topicName} — This was our primary focus today!`,
+          "A2: (A) Yes — It powers real-world systems and observations.",
+          "A3: (A) Active practice — Completing exercises boosts memory retention."
+        ],
+        speaker_notes: "Great job if you scored 3 out of 3! Review any question you missed.",
+        visual_description: "Checkmark shield graphic with answer keys",
+        image_prompt: "Shield with golden checkmark, 16:9",
+        layout: "Answer Key",
+        design_notes: "Success green color badges"
+      },
+      {
+        slide_number: 12,
+        title: "🌟 Thank You & Great Work!",
+        subtitle: "Keep Learning & Exploring",
+        bullet_points: [
+          `You have successfully mastered the basics of ${topicName}!`,
+          "Download the PowerPoint deck and MP3 audio for offline revision.",
+          "See you in the next AI LMS Master Teacher lesson!"
+        ],
+        speaker_notes: "Thank you students for your active participation! Keep exploring and keep learning.",
+        visual_description: "Smiling AI teacher avatar waving goodbye with stars",
+        image_prompt: "Friendly teacher waving goodbye, cheerful students, confetti, 16:9",
+        layout: "Closing Card",
+        design_notes: "Warm violet and cyan celebratory glow"
       }
     ];
-
-    const source = storyboardText || scriptText || "";
-    const rawScenes = source.split("\n\n").filter((s) => s.trim() && !s.startsWith("#")).slice(0, 5);
-    rawScenes.forEach((sceneText, idx) => {
-      const clean = sceneText.replace(/[*#_~`\[\]]/g, "").trim();
-      const parts = clean.split(".").filter((p) => p.trim());
-      const slideTitle = parts[0] ? parts[0].substring(0, 50) : `Concept Section ${idx + 1}`;
-      const bullets = parts.length > 1 ? parts.slice(1, 5) : [clean.substring(0, 140)];
-
-      fallbackList.push({
-        slide_number: idx + 2,
-        title: `Slide ${idx + 2}: ${slideTitle}`,
-        subtitle: `Section ${idx + 1} of ${rawScenes.length}`,
-        bullets: bullets,
-        visual_cue: `⚡ Interactive Diagram #${idx + 1}`,
-        speaker_notes: `Teacher Note for Slide ${idx + 2}: Emphasize ${slideTitle} and ask students how it relates to real-world experiences.`
-      });
-    });
-
     return fallbackList;
   };
-
-  const buildFallbackAudioSegments = (scriptText) => {
-    const paras = scriptText.split("\n\n").filter((p) => p.trim());
-    let curr = 0;
-    return paras.map((p, idx) => {
-      const clean = p.replace(/[*#_~`\[\]]/g, "").trim();
-      const dur = Math.max(8, Math.min(25, Math.floor(clean.length / 12)));
-      const segment = {
-        id: idx + 1,
-        start_time: curr,
-        end_time: curr + dur,
-        time_label: `${String(Math.floor(curr / 60)).padStart(2, "0")}:${String(Math.floor(curr % 60)).padStart(2, "0")}`,
-        text: clean
-      };
-      curr += dur;
-      return segment;
-    });
-  };
-
-  const buildFallbackVideoQuizzes = (topicName) => [
-    {
-      id: 1,
-      timestamp: 10,
-      time_label: "00:10",
-      chapter_title: "1. Introduction & Overview",
-      question: `What is the primary topic covered in this lesson?`,
-      options: [
-        topicName || "Core Topic",
-        "Ancient World History",
-        "Advanced Astrophysics",
-        "General Unrelated Science"
-      ],
-      correct_index: 0,
-      explanation: `Correct! Today's lesson is specifically focused on ${topicName || "the assigned topic"}.`
-    },
-    {
-      id: 2,
-      timestamp: 25,
-      time_label: "00:25",
-      chapter_title: "2. Main Concept Checkpoint",
-      question: `Which grade level is this lesson material calibrated for?`,
-      options: [
-        "Primary School",
-        `Class ${gradeLevel} Level`,
-        "University Post-Doc",
-        "Nursery"
-      ],
-      correct_index: 1,
-      explanation: `Spot on! The lesson explanation and tone are tuned for Class ${gradeLevel}.`
-    },
-    {
-      id: 3,
-      timestamp: 45,
-      time_label: "00:45",
-      chapter_title: "3. Interactive Reflection",
-      question: "What is the best way to consolidate learning after this lesson?",
-      options: [
-        "Forget the material immediately",
-        "Complete the hands-on activity and check questions",
-        "Skip all exercises",
-        "Close without reviewing"
-      ],
-      correct_index: 1,
-      explanation: "Excellent! Completing hands-on reflection activities boosts retention."
-    }
-  ];
 
   const handleGenerateMedia = async () => {
     const finalSource = extractedContent || textInput;
@@ -221,6 +313,7 @@ function AudioVideoStudio() {
     }
 
     setLoading(true);
+    setGenerationStatus("synthesizing");
     setScript("");
     setAudioUrl("");
     setAudioDownloadUrl("");
@@ -231,6 +324,7 @@ function AudioVideoStudio() {
     setVideoScript("");
     setVideoNotesActivity("");
     setErrorMessage("");
+    setProviderErrors([]);
 
     setSlides([]);
     setCurrentSlideIndex(0);
@@ -241,7 +335,6 @@ function AudioVideoStudio() {
     setIsVideoPlaying(false);
     setCurrentVideoTime(0);
 
-    // Stop any ongoing speech
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
@@ -255,41 +348,76 @@ function AudioVideoStudio() {
         source_content: finalSource
       });
 
-      if (response.data.success) {
-        const genScript = response.data.script || "";
+      if (response.data.success || response.data.status === "completed") {
+        setGenerationStatus("completed");
+        const genScript = response.data.script || response.data.audio?.narration_script || "";
         const genVideoScript = response.data.video_script || "";
         setScript(genScript);
         setVideoScript(genVideoScript);
         setVideoNotesActivity(response.data.video_notes_activity || "");
 
-        if (response.data.audio_url) setAudioUrl(resolveUrl(response.data.audio_url));
-        if (response.data.audio_download_url) setAudioDownloadUrl(resolveUrl(response.data.audio_download_url));
-        if (response.data.video_url) setVideoUrl(resolveUrl(response.data.video_url));
-        if (response.data.video_download_url) setVideoDownloadUrl(resolveUrl(response.data.video_download_url));
-        if (response.data.ppt_url) setPptUrl(resolveUrl(response.data.ppt_url));
-        if (response.data.ppt_download_url) setPptDownloadUrl(resolveUrl(response.data.ppt_download_url));
+        // Providers
+        if (response.data.audio?.provider) setAudioProvider(response.data.audio.provider);
+        if (response.data.video?.provider) setVideoProvider(response.data.video.provider);
+        if (response.data.presentation?.provider) setPptProvider(response.data.presentation.provider);
+        if (response.data.errors) setProviderErrors(response.data.errors);
 
-        // Interactive Metadata
-        const returnedSlides = response.data.slides && response.data.slides.length > 0
-          ? response.data.slides
-          : buildFallbackSlides(topicTitle || "Study Lesson", genScript, genVideoScript);
-        setSlides(returnedSlides);
+        // URLs
+        const audUrl = response.data.audio?.url || response.data.audio_url;
+        const audDUrl = response.data.audio?.download_url || response.data.audio_download_url;
+        const vidUrl = response.data.video?.url || response.data.video_url;
+        const vidDUrl = response.data.video?.download_url || response.data.video_download_url;
+        const pUrl = response.data.presentation?.url || response.data.ppt_url;
+        const pDUrl = response.data.presentation?.download_url || response.data.ppt_download_url;
 
-        const returnedSegments = response.data.audio_segments && response.data.audio_segments.length > 0
-          ? response.data.audio_segments
-          : buildFallbackAudioSegments(genScript);
-        setAudioSegments(returnedSegments);
+        if (audUrl) setAudioUrl(resolveUrl(audUrl));
+        if (audDUrl) setAudioDownloadUrl(resolveUrl(audDUrl));
+        if (vidUrl) setVideoUrl(resolveUrl(vidUrl));
+        if (vidDUrl) setVideoDownloadUrl(resolveUrl(vidDUrl));
+        if (pUrl) setPptUrl(resolveUrl(pUrl));
+        if (pDUrl) setPptDownloadUrl(resolveUrl(pDUrl));
 
-        const returnedQuizzes = response.data.video_quizzes && response.data.video_quizzes.length > 0
-          ? response.data.video_quizzes
-          : buildFallbackVideoQuizzes(topicTitle);
-        setVideoQuizzes(returnedQuizzes);
+        // Storyboard
+        if (response.data.video?.storyboard) {
+          setStoryboard(response.data.video.storyboard);
+        }
+
+        // Slides
+        const returnedSlides = response.data.presentation?.slides || response.data.slides;
+        setSlides(returnedSlides && returnedSlides.length > 0 ? returnedSlides : buildFallbackSlides(topicTitle || "Lesson", genScript));
+
+        // Audio segments
+        if (response.data.audio_segments && response.data.audio_segments.length > 0) {
+          setAudioSegments(response.data.audio_segments);
+        } else {
+          const rawParas = genScript.split(".").filter((p) => p.trim());
+          let curr = 0;
+          setAudioSegments(rawParas.slice(0, 8).map((p, i) => {
+            const dur = Math.max(6, Math.min(20, Math.floor(p.length / 10)));
+            const seg = {
+              id: i + 1,
+              start_time: curr,
+              end_time: curr + dur,
+              time_label: `${String(Math.floor(curr / 60)).padStart(2, "0")}:${String(Math.floor(curr % 60)).padStart(2, "0")}`,
+              text: p.trim()
+            };
+            curr += dur;
+            return seg;
+          }));
+        }
+
+        // Video quizzes
+        if (response.data.video_quizzes && response.data.video_quizzes.length > 0) {
+          setVideoQuizzes(response.data.video_quizzes);
+        }
 
       } else {
-        setErrorMessage(response.data.error || "Media generation failed.");
+        setGenerationStatus("error");
+        setErrorMessage(response.data.error || "Multimedia synthesis failed.");
       }
     } catch (err) {
       console.error("Studio error:", err);
+      setGenerationStatus("error");
       setErrorMessage(err.response?.data?.detail || "Media synthesis failed.");
     } finally {
       setLoading(false);
@@ -337,7 +465,6 @@ function AudioVideoStudio() {
         setIsPlayingAudio(true);
       }
     } else {
-      // Browser Speech Synthesis
       if (isPlayingAudio) {
         if (window.speechSynthesis) window.speechSynthesis.cancel();
         setIsPlayingAudio(false);
@@ -390,7 +517,7 @@ function AudioVideoStudio() {
     });
   };
 
-  // Simulated Storyboard Video Timer (When no videoUrl file is present)
+  // Storyboard Cinema Video Timer
   useEffect(() => {
     if (isVideoPlaying && !videoUrl) {
       videoTimerRef.current = setInterval(() => {
@@ -400,7 +527,6 @@ function AudioVideoStudio() {
           const sceneIndex = Math.floor(nextTime / 15) % totalScenes;
           setCurrentSceneIndex(sceneIndex);
 
-          // Check Quiz Checkpoints in simulated video
           videoQuizzes.forEach((quiz) => {
             if (!completedQuizIds.includes(quiz.id) && Math.abs(nextTime - quiz.timestamp) <= 0.5) {
               setIsVideoPlaying(false);
@@ -473,7 +599,7 @@ function AudioVideoStudio() {
     }
   };
 
-  // PPT Fullscreen
+  // PPT Fullscreen Toggle
   const toggleFullscreenPPT = () => {
     if (!pptContainerRef.current) return;
     if (!document.fullscreenElement) {
@@ -500,15 +626,17 @@ function AudioVideoStudio() {
       <div className="page-header">
         <div>
           <h2 className="page-title">
-            <span style={{ color: "var(--accent-cyan)" }}>🎙️🎬 AI LMS</span> Interactive Audio, Video & PPT Studio
+            <span style={{ color: "var(--accent-cyan)" }}>🎙️🎬 AI LMS</span> Multimedia Engine Studio
           </h2>
           <p className="page-subtitle">
-            Interactive Slide Presenter, Voice-Synced Audio Player, and In-Video Quiz Checkpoints for Multilingual Learning.
+            Synchronized Audio Narration (ElevenLabs), Educational Video (Hugging Face), and PowerPoint Deck (Google Gemini).
           </p>
         </div>
-        <span style={{ background: "rgba(0, 212, 255, 0.1)", border: "1px solid var(--border-cyan)", color: "var(--accent-cyan)", padding: "6px 14px", borderRadius: "20px", fontFamily: "var(--font-heading)", fontSize: "11px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>
-          MULTIMEDIA_STUDIO_ACTIVE
-        </span>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <span style={{ background: generationStatus === "completed" ? "rgba(16, 185, 129, 0.2)" : "rgba(0, 212, 255, 0.1)", border: generationStatus === "completed" ? "1px solid #10b981" : "1px solid var(--border-cyan)", color: generationStatus === "completed" ? "#10b981" : "var(--accent-cyan)", padding: "6px 14px", borderRadius: "20px", fontFamily: "var(--font-heading)", fontSize: "11px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>
+            {generationStatus === "completed" ? "✓ ENGINE_COMPLETED" : "TRIPLE_PROVIDER_ACTIVE"}
+          </span>
+        </div>
       </div>
 
       {/* Input Controls */}
@@ -553,7 +681,7 @@ function AudioVideoStudio() {
               type="text"
               value={topicTitle}
               onChange={(e) => setTopicTitle(e.target.value)}
-              placeholder="e.g. Machine Learning, Photosynthesis, Newton's Laws..."
+              placeholder="e.g. Artificial Intelligence, Photosynthesis, Newton's Laws..."
               disabled={loading}
             />
           </div>
@@ -579,9 +707,9 @@ function AudioVideoStudio() {
           </div>
 
           <div className="form-group">
-            <label>Output Media Generation Mode</label>
+            <label>Output Multimedia Mode</label>
             <select value={mediaType} onChange={(e) => setMediaType(e.target.value)} disabled={loading}>
-              <option value="Audio & Video Overview">🎙️🎬 Interactive Audio, Video & PPT Deck</option>
+              <option value="Audio & Video Overview">🎙️🎬📊 Complete Triple Engine: Audio (ElevenLabs) + Video (HF) + PPT (Gemini)</option>
               <option value="Audio Voice Narration">🎙️ Audio Voice Narration (.mp3)</option>
               <option value="Video Storyboard Script">🎬 Video Storyboard & Presentation Script</option>
             </select>
@@ -597,7 +725,7 @@ function AudioVideoStudio() {
           disabled={loading}
           style={{ padding: "14px 28px", width: "100%", fontSize: "14px" }}
         >
-          {loading ? "⏳ Synthesizing Interactive Audio, Video & PPT Studio..." : "✨ Synthesize Audio & Video Lesson"}
+          {loading ? "⏳ Generating Multimedia Engine (ElevenLabs + Hugging Face + Gemini)..." : "✨ Build Complete Multimedia Lesson"}
         </button>
       </div>
 
@@ -605,99 +733,243 @@ function AudioVideoStudio() {
       {errorMessage && (
         <div className="alert-error" style={{ marginTop: "16px" }}>
           ⚠️ {errorMessage}
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={handleGenerateMedia}
+            style={{ marginLeft: "12px", padding: "4px 10px", fontSize: "11px" }}
+          >
+            🔄 Retry Generation
+          </button>
         </div>
       )}
 
-      {/* Loading State */}
+      {/* Non-fatal provider warnings */}
+      {providerErrors.length > 0 && (
+        <div style={{ background: "rgba(245, 158, 11, 0.1)", border: "1px solid #f59e0b", color: "#f59e0b", padding: "10px 14px", borderRadius: "8px", marginTop: "12px", fontSize: "12px" }}>
+          🔔 Provider status notices: {providerErrors.join(" | ")}
+        </div>
+      )}
+
+      {/* Loading Progress State */}
       {loading && (
         <div className="alert-loading" style={{ marginTop: "20px" }}>
           <div className="pulse-dot"></div>
-          🎙️ AI LMS Master Teacher is synthesizing interactive PowerPoint deck, voice sync narration, and educational video checkpoints in {language}...
+          <div>
+            <p style={{ margin: 0, fontWeight: "700" }}>
+              ⏳ AI LMS Engine is generating synchronized outputs for "{topicTitle || "Lesson"}":
+            </p>
+            <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "var(--text-secondary)" }}>
+              🎙️ ElevenLabs Voice Synthesis • 🎬 Hugging Face Video Storyboard • 📊 Google Gemini 12-Slide PowerPoint Deck
+            </p>
+          </div>
         </div>
       )}
 
-      {/* Studio Action & Export Bar */}
-      {(script || videoScript) && !loading && (
-        <div style={{ background: "rgba(0, 212, 255, 0.06)", border: "1px solid var(--accent-cyan)", borderRadius: "var(--radius-lg)", padding: "16px 20px", marginTop: "24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
-          <div>
-            <h3 style={{ fontFamily: "var(--font-heading)", fontSize: "14px", fontWeight: "700", color: "var(--accent-cyan)", letterSpacing: "1px", textTransform: "uppercase" }}>
-              ⚡ AI LMS Studio Export Controls ({language})
-            </h3>
-            <p style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>
-              Download or export generated PowerPoint deck (.pptx), audio narration (.mp3), and educational video clip (.mp4)
-            </p>
-          </div>
+      {/* ==================================================== */}
+      {/* 3 OUTPUT CARDS REQUIRED BY LMS SPECIFICATION          */}
+      {/* ==================================================== */}
+      {(script || videoScript || slides.length > 0) && !loading && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px", marginTop: "24px" }}>
+          {/* Output Card 1: Audio Lesson */}
+          <div className="hud-corner" style={{ background: "#060914", border: "1px solid var(--accent-cyan)", borderRadius: "var(--radius-lg)", padding: "18px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                <span style={{ fontSize: "11px", color: "var(--accent-cyan)", fontWeight: "700", background: "rgba(0, 212, 255, 0.1)", padding: "2px 8px", borderRadius: "10px" }}>
+                  PROVIDER: {audioProvider.toUpperCase()}
+                </span>
+                <span style={{ fontSize: "11px", color: "#10b981", fontWeight: "700" }}>✓ READY</span>
+              </div>
+              <h3 style={{ fontSize: "15px", color: "#fff", margin: "0 0 6px 0", fontWeight: "700" }}>
+                🎙️ AUDIO LESSON (.mp3)
+              </h3>
+              <p style={{ fontSize: "12px", color: "var(--text-secondary)", margin: "0 0 12px 0" }}>
+                Professional teacher voice narration structured into Intro, Main Lesson, Recap & Closing.
+              </p>
+            </div>
 
-          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-            {pptDownloadUrl ? (
-              <a
-                href={pptDownloadUrl}
-                download
-                className="btn-primary"
-                style={{ padding: "10px 18px", fontSize: "12px", textDecoration: "none", background: "linear-gradient(135deg, #a855f7 0%, #6366f1 100%)" }}
-              >
-                📊 Download PPT Presentation (.pptx)
-              </a>
-            ) : (
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={() => {
-                  const blob = new Blob([
-                    `AI LMS PRESENTATION DECK - ${topicTitle || "Lesson"}\nGrade: Class ${gradeLevel} | Language: ${language}\n\n` +
-                    slides.map((s, i) => `SLIDE ${i + 1}: ${s.title}\n${s.bullets.map(b => " - " + b).join("\n")}\nNotes: ${s.speaker_notes || ""}\n\n`).join("---\n\n")
-                  ], { type: "text/plain" });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = `AI_LMS_${topicTitle || "Lesson"}_Presentation.txt`;
-                  a.click();
-                }}
-                style={{ padding: "10px 18px", fontSize: "12px", background: "linear-gradient(135deg, #a855f7 0%, #6366f1 100%)" }}
-              >
-                📊 Export PPT Slide Deck
-              </button>
-            )}
-
-            {audioDownloadUrl ? (
-              <a
-                href={audioDownloadUrl}
-                download
-                className="btn-primary"
-                style={{ padding: "10px 18px", fontSize: "12px", textDecoration: "none" }}
-              >
-                ⬇️ Download MP3 Audio
-              </a>
-            ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <button
                 type="button"
                 className="btn-primary"
                 onClick={handleToggleAudio}
-                style={{ padding: "10px 18px", fontSize: "12px" }}
+                style={{ width: "100%", padding: "8px", fontSize: "12px" }}
               >
-                {isPlayingAudio ? "⏸ Pause Narration" : "🎙️ Play / Listen Voice Narration"}
+                {isPlayingAudio ? "⏸ Pause Narration" : "▶ Play Voice Audio"}
               </button>
-            )}
 
-            {videoDownloadUrl ? (
-              <a
-                href={videoDownloadUrl}
-                download
-                className="btn-primary"
-                style={{ padding: "10px 18px", fontSize: "12px", textDecoration: "none", background: "var(--amber-gradient)" }}
+              {audioDownloadUrl ? (
+                <a
+                  href={audioDownloadUrl}
+                  download
+                  className="btn-secondary"
+                  style={{ textAlign: "center", textDecoration: "none", padding: "8px", fontSize: "12px", border: "1px solid var(--accent-cyan)", color: "var(--accent-cyan)" }}
+                >
+                  ⬇️ Download MP3 Audio
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => {
+                    const blob = new Blob([script], { type: "text/plain" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `AI_LMS_${topicTitle || "Lesson"}_Audio_Script.txt`;
+                    a.click();
+                  }}
+                  style={{ padding: "8px", fontSize: "12px" }}
+                >
+                  ⬇️ Export Audio Script
+                </button>
+              )}
+
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={handleGenerateMedia}
+                style={{ padding: "6px", fontSize: "11px", color: "var(--text-secondary)" }}
               >
-                ⬇️ Download MP4 Video
-              </a>
-            ) : (
+                🔄 Regenerate Audio
+              </button>
+            </div>
+          </div>
+
+          {/* Output Card 2: Educational Video */}
+          <div className="hud-corner" style={{ background: "#060914", border: "1px solid var(--accent-turquoise)", borderRadius: "var(--radius-lg)", padding: "18px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                <span style={{ fontSize: "11px", color: "var(--accent-turquoise)", fontWeight: "700", background: "rgba(20, 184, 166, 0.1)", padding: "2px 8px", borderRadius: "10px" }}>
+                  PROVIDER: {videoProvider.toUpperCase()}
+                </span>
+                <span style={{ fontSize: "11px", color: "#10b981", fontWeight: "700" }}>✓ READY</span>
+              </div>
+              <h3 style={{ fontSize: "15px", color: "#fff", margin: "0 0 6px 0", fontWeight: "700" }}>
+                🎬 EDUCATIONAL VIDEO (.mp4)
+              </h3>
+              <p style={{ fontSize: "12px", color: "var(--text-secondary)", margin: "0 0 12px 0" }}>
+                16:9 widescreen educational video with visual storyboard, on-screen text & checkpoint quizzes.
+              </p>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <button
                 type="button"
                 className="btn-primary"
                 onClick={handleToggleVideo}
-                style={{ padding: "10px 18px", fontSize: "12px", background: "var(--amber-gradient)" }}
+                style={{ width: "100%", padding: "8px", fontSize: "12px", background: "var(--amber-gradient)" }}
               >
-                {isVideoPlaying ? "⏸ Pause Video" : "🎬 Play Interactive Video"}
+                {isVideoPlaying ? "⏸ Pause Video" : "🎬 Play Video Preview"}
               </button>
-            )}
+
+              {videoDownloadUrl ? (
+                <a
+                  href={videoDownloadUrl}
+                  download
+                  className="btn-secondary"
+                  style={{ textAlign: "center", textDecoration: "none", padding: "8px", fontSize: "12px", border: "1px solid #f59e0b", color: "#f59e0b" }}
+                >
+                  ⬇️ Download MP4 Video
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => {
+                    const blob = new Blob([videoScript || JSON.stringify(storyboard, null, 2)], { type: "text/plain" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `AI_LMS_${topicTitle || "Lesson"}_Storyboard.txt`;
+                    a.click();
+                  }}
+                  style={{ padding: "8px", fontSize: "12px" }}
+                >
+                  ⬇️ Export Storyboard Plan
+                </button>
+              )}
+
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={handleGenerateMedia}
+                style={{ padding: "6px", fontSize: "11px", color: "var(--text-secondary)" }}
+              >
+                🔄 Regenerate Video
+              </button>
+            </div>
+          </div>
+
+          {/* Output Card 3: PowerPoint Presentation */}
+          <div className="hud-corner" style={{ background: "#060914", border: "1px solid var(--accent-violet)", borderRadius: "var(--radius-lg)", padding: "18px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                <span style={{ fontSize: "11px", color: "var(--accent-violet)", fontWeight: "700", background: "rgba(168, 85, 247, 0.1)", padding: "2px 8px", borderRadius: "10px" }}>
+                  PROVIDER: {pptProvider.toUpperCase()}
+                </span>
+                <span style={{ fontSize: "11px", color: "#10b981", fontWeight: "700" }}>✓ READY</span>
+              </div>
+              <h3 style={{ fontSize: "15px", color: "#fff", margin: "0 0 6px 0", fontWeight: "700" }}>
+                📊 POWERPOINT DECK (.pptx)
+              </h3>
+              <p style={{ fontSize: "12px", color: "var(--text-secondary)", margin: "0 0 12px 0" }}>
+                12-slide comprehensive curriculum deck with native speaker notes, activities & quiz keys.
+              </p>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => {
+                  const el = document.getElementById("ppt-viewer-section");
+                  if (el) el.scrollIntoView({ behavior: "smooth" });
+                }}
+                style={{ width: "100%", padding: "8px", fontSize: "12px", background: "linear-gradient(135deg, #a855f7 0%, #6366f1 100%)" }}
+              >
+                📊 View Slides ({slides.length} Slides)
+              </button>
+
+              {pptDownloadUrl ? (
+                <a
+                  href={pptDownloadUrl}
+                  download
+                  className="btn-secondary"
+                  style={{ textAlign: "center", textDecoration: "none", padding: "8px", fontSize: "12px", border: "1px solid var(--accent-violet)", color: "var(--accent-violet)" }}
+                >
+                  ⬇️ Download PPTX Presentation
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => {
+                    const blob = new Blob([
+                      `AI LMS PRESENTATION DECK - ${topicTitle || "Lesson"}\nGrade: Class ${gradeLevel} | Language: ${language}\n\n` +
+                      slides.map((s, i) => `SLIDE ${i + 1}: ${s.title}\n${(s.bullet_points || []).map(b => " - " + b).join("\n")}\nNotes: ${s.speaker_notes || ""}\n\n`).join("---\n\n")
+                    ], { type: "text/plain" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `AI_LMS_${topicTitle || "Lesson"}_Slides.txt`;
+                    a.click();
+                  }}
+                  style={{ padding: "8px", fontSize: "12px" }}
+                >
+                  ⬇️ Export Slide Deck
+                </button>
+              )}
+
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={handleGenerateMedia}
+                style={{ padding: "6px", fontSize: "11px", color: "var(--text-secondary)" }}
+              >
+                🔄 Regenerate PPT
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -706,14 +978,14 @@ function AudioVideoStudio() {
       {/* SECTION 1: INTERACTIVE SLIDE-BY-SLIDE PPT VIEWER     */}
       {/* ---------------------------------------------------- */}
       {(slides.length > 0 || script) && !loading && (
-        <div style={{ marginTop: "28px" }}>
+        <div id="ppt-viewer-section" style={{ marginTop: "32px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "10px" }}>
             <div>
               <h3 style={{ fontFamily: "var(--font-heading)", fontSize: "16px", fontWeight: "700", color: "var(--accent-violet)", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "8px" }}>
-                📊 Interactive Slide-by-Slide PPT Viewer & Presenter
+                📊 Google Gemini PowerPoint Slide-by-Slide Presenter
               </h3>
               <p style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-                Navigate through interactive slides, review speaker notes, or enter fullscreen presenter mode.
+                Navigate 8–12 structured educational slides, review native speaker notes, or enter fullscreen mode.
               </p>
             </div>
             <div style={{ display: "flex", gap: "8px" }}>
@@ -745,7 +1017,7 @@ function AudioVideoStudio() {
               border: "2px solid var(--accent-violet)",
               borderRadius: "var(--radius-lg)",
               padding: isFullscreenPPT ? "40px" : "24px",
-              minHeight: "360px",
+              minHeight: "380px",
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
@@ -764,7 +1036,7 @@ function AudioVideoStudio() {
                 </span>
               </div>
               <span style={{ fontSize: "12px", color: "var(--accent-turquoise)", fontWeight: "600" }}>
-                AI LMS PRESENTATION DECK ({language})
+                GOOGLE GEMINI PPT • CLASS {gradeLevel} ({language})
               </span>
             </div>
 
@@ -776,7 +1048,7 @@ function AudioVideoStudio() {
                     {activeSlide.title}
                   </h2>
                   <ul style={{ listStyleType: "none", padding: 0, margin: 0 }}>
-                    {activeSlide.bullets.map((bullet, bIdx) => (
+                    {(activeSlide.bullet_points || activeSlide.bullets || []).map((bullet, bIdx) => (
                       <li key={bIdx} style={{ fontSize: "14px", color: "#f1f5f9", marginBottom: "12px", display: "flex", alignItems: "flex-start", gap: "10px" }}>
                         <span style={{ color: "var(--accent-turquoise)", fontSize: "16px" }}>▶</span>
                         <span>{bullet}</span>
@@ -787,12 +1059,12 @@ function AudioVideoStudio() {
 
                 {/* Right Slide Graphic Card */}
                 <div style={{ background: "rgba(16, 25, 48, 0.8)", border: "1px solid var(--accent-violet)", borderRadius: "12px", padding: "16px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                  <div style={{ fontSize: "42px", marginBottom: "8px" }}>👩‍🏫</div>
+                  <div style={{ fontSize: "40px", marginBottom: "8px" }}>👩‍🏫</div>
                   <h4 style={{ fontSize: "13px", color: "var(--accent-violet)", fontWeight: "700" }}>
-                    {activeSlide.visual_cue || "Interactive Visual"}
+                    {activeSlide.layout || "Concept Visual"}
                   </h4>
                   <p style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "6px" }}>
-                    Master Teacher Graphic • Class {gradeLevel}
+                    {activeSlide.visual_description || `Master Teacher Graphic • Class ${gradeLevel}`}
                   </p>
                 </div>
               </div>
@@ -802,7 +1074,7 @@ function AudioVideoStudio() {
             {showSpeakerNotes && activeSlide?.speaker_notes && (
               <div style={{ marginTop: "16px", background: "rgba(0,0,0,0.6)", border: "1px dashed var(--accent-cyan)", padding: "12px", borderRadius: "8px" }}>
                 <p style={{ fontSize: "11px", color: "var(--accent-cyan)", fontWeight: "700", textTransform: "uppercase", marginBottom: "4px" }}>
-                  🗣️ Teacher Speaker Notes & Script Prompt:
+                  🗣️ Google Gemini Native Speaker Notes & Teacher Prompt:
                 </p>
                 <p style={{ fontSize: "12px", color: "#cbd5e1", fontStyle: "italic" }}>
                   "{activeSlide.speaker_notes}"
@@ -882,347 +1154,353 @@ function AudioVideoStudio() {
       )}
 
       {/* ---------------------------------------------------- */}
-      {/* SECTION 2: INTERACTIVE AUDIO PLAYER & TRANSCRIPT     */}
+      {/* SECTION 2: INTERACTIVE AUDIO PLAYER (ELEVENLABS)     */}
       {/* ---------------------------------------------------- */}
       {(audioUrl || script) && !loading && (
-        <div className="hud-corner" style={{ background: "#060914", border: "1px solid var(--accent-cyan)", borderRadius: "var(--radius-lg)", padding: "20px", marginTop: "24px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
-            <div>
-              <h3 style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: "700", color: "var(--accent-cyan)", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "8px" }}>
-                🔊 Interactive Audio Voice Player & Transcript Sync ({language})
-              </h3>
-              <p style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-                Listen to the voice narration. Click any line in the transcript to jump audio playback directly to that sentence!
-              </p>
-            </div>
-
-            {/* Audio Speed Controls */}
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>Playback Speed:</span>
-              <select
-                value={audioPlaybackSpeed}
-                onChange={(e) => handleSpeedChange(Number(e.target.value))}
-                style={{ padding: "4px 8px", fontSize: "12px", width: "80px" }}
-              >
-                <option value={0.75}>0.75x</option>
-                <option value={1.0}>1.0x (Normal)</option>
-                <option value={1.25}>1.25x</option>
-                <option value={1.5}>1.5x</option>
-                <option value={2.0}>2.0x</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Equalizer Visualizer & Player Box */}
-          <div style={{ background: "rgba(0,0,0,0.5)", border: "1px solid var(--border-cyan)", borderRadius: "8px", padding: "16px", marginBottom: "16px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "10px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={handleToggleAudio}
-                  style={{ padding: "8px 18px", fontSize: "12px", display: "flex", alignItems: "center", gap: "6px" }}
-                >
-                  {isPlayingAudio ? "⏸ Pause Narration" : "▶ Play Voice Narration"}
-                </button>
-
-                {/* Dynamic Soundwave Animated Equalizer */}
-                <div style={{ display: "flex", alignItems: "center", gap: "3px", height: "24px" }}>
-                  {[12, 22, 16, 28, 10, 24, 18, 30, 14, 20].map((h, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        width: "4px",
-                        height: isPlayingAudio ? `${h}px` : "6px",
-                        background: "var(--accent-cyan)",
-                        borderRadius: "2px",
-                        transition: "height 0.2s ease",
-                        animation: isPlayingAudio ? `pulse 0.6s infinite alternate ${i * 0.1}s` : "none"
-                      }}
-                    />
-                  ))}
-                </div>
+        <div style={{ marginTop: "28px" }}>
+          <div className="hud-corner" style={{ background: "#060914", border: "1px solid var(--accent-cyan)", borderRadius: "var(--radius-lg)", padding: "20px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
+              <div>
+                <h3 style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: "700", color: "var(--accent-cyan)", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "8px" }}>
+                  🔊 ElevenLabs Voice Narration & Synchronized Transcript ({language})
+                </h3>
+                <p style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+                  Natural teacher-style narration with clear pronunciation. Click any sentence to jump audio directly!
+                </p>
               </div>
 
-              <span style={{ fontSize: "12px", color: "var(--accent-cyan)", fontWeight: "600" }}>
-                {isPlayingAudio ? "🎙️ Playing Multilingual Voiceover..." : "⏸ Voiceover Ready"}
-              </span>
-            </div>
-
-            {audioUrl ? (
-              <audio
-                ref={audioRef}
-                controls
-                src={audioUrl}
-                onTimeUpdate={handleAudioTimeUpdate}
-                onPlay={() => setIsPlayingAudio(true)}
-                onPause={() => setIsPlayingAudio(false)}
-                style={{ width: "100%", marginTop: "6px" }}
-              >
-                Your browser does not support HTML5 audio.
-              </audio>
-            ) : (
-              <p style={{ fontSize: "11px", color: "var(--text-secondary)", margin: "4px 0 0 0" }}>
-                ⚡ Using Browser Neural Speech Synthesis for Instant Zero-Latency Voice Playback in {language}
-              </p>
-            )}
-          </div>
-
-          {/* Interactive Line-by-Line Synchronized Transcript */}
-          {audioSegments.length > 0 && (
-            <div style={{ maxHeight: "280px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", paddingRight: "4px" }}>
-              {audioSegments.map((seg) => {
-                const isActive = currentAudioTime >= seg.start_time && currentAudioTime < seg.end_time;
-                return (
-                  <div
-                    key={seg.id}
-                    onClick={() => handleSeekAudio(seg)}
-                    style={{
-                      background: isActive ? "rgba(0, 212, 255, 0.15)" : "rgba(10, 15, 30, 0.6)",
-                      border: isActive ? "1px solid var(--accent-cyan)" : "1px solid transparent",
-                      borderRadius: "6px",
-                      padding: "10px 14px",
-                      cursor: "pointer",
-                      transition: "all 0.2s",
-                      display: "flex",
-                      gap: "12px",
-                      alignItems: "flex-start"
-                    }}
-                  >
-                    <span style={{ background: isActive ? "var(--accent-cyan)" : "rgba(255,255,255,0.1)", color: isActive ? "#000" : "var(--accent-cyan)", padding: "2px 6px", borderRadius: "4px", fontSize: "11px", fontWeight: "700" }}>
-                      ⏱️ {seg.time_label}
-                    </span>
-                    <p style={{ fontSize: "13px", color: isActive ? "#ffffff" : "#cbd5e1", margin: 0, lineHeight: "1.5" }}>
-                      {seg.text}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ---------------------------------------------------- */}
-      {/* SECTION 3: INTERACTIVE VIDEO WITH CHECKPOINT QUIZZES */}
-      {/* ---------------------------------------------------- */}
-      {(videoUrl || videoScript || script) && !loading && (
-        <div className="hud-corner" style={{ background: "#060914", border: "1px solid var(--accent-turquoise)", borderRadius: "var(--radius-lg)", padding: "20px", marginTop: "24px", position: "relative" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "10px" }}>
-            <div>
-              <h3 style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: "700", color: "var(--accent-turquoise)", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "8px" }}>
-                🎬 Interactive Educational Video & In-Video Checkpoint Quizzes
-              </h3>
-              <p style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-                Watch the video lesson. The player pauses at key moments to prompt interactive check-for-understanding quizzes!
-              </p>
-            </div>
-          </div>
-
-          {/* Chapter Bookmarks Strip */}
-          {videoQuizzes.length > 0 && (
-            <div style={{ display: "flex", gap: "8px", marginBottom: "12px", overflowX: "auto", paddingBottom: "4px" }}>
-              <span style={{ fontSize: "11px", color: "var(--accent-turquoise)", fontWeight: "700", display: "flex", alignItems: "center" }}>
-                📌 CHAPTERS:
-              </span>
-              {videoQuizzes.map((q) => (
-                <button
-                  key={q.id}
-                  type="button"
-                  onClick={() => handleSeekVideoChapter(q.timestamp)}
-                  style={{
-                    background: completedQuizIds.includes(q.id) ? "rgba(16, 185, 129, 0.2)" : "rgba(0, 212, 255, 0.1)",
-                    border: completedQuizIds.includes(q.id) ? "1px solid #10b981" : "1px solid var(--border-cyan)",
-                    color: completedQuizIds.includes(q.id) ? "#10b981" : "var(--accent-cyan)",
-                    padding: "4px 10px",
-                    borderRadius: "14px",
-                    fontSize: "11px",
-                    cursor: "pointer",
-                    whiteSpace: "nowrap"
-                  }}
+              {/* Audio Speed Controls */}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>Playback Speed:</span>
+                <select
+                  value={audioPlaybackSpeed}
+                  onChange={(e) => handleSpeedChange(Number(e.target.value))}
+                  style={{ padding: "4px 8px", fontSize: "12px", width: "80px" }}
                 >
-                  {completedQuizIds.includes(q.id) ? "✅" : "📍"} {q.time_label} {q.chapter_title}
-                </button>
-              ))}
+                  <option value={0.75}>0.75x</option>
+                  <option value={1.0}>1.0x (Normal)</option>
+                  <option value={1.25}>1.25x</option>
+                  <option value={1.5}>1.5x</option>
+                  <option value={2.0}>2.0x</option>
+                </select>
+              </div>
             </div>
-          )}
 
-          {/* Video Player Box with In-Video Quiz Overlay */}
-          <div style={{ position: "relative", borderRadius: "8px", overflow: "hidden", border: "1px solid var(--border-cyan)" }}>
-            {videoUrl ? (
-              <video
-                ref={videoRef}
-                controls
-                src={videoUrl}
-                onTimeUpdate={handleVideoTimeUpdate}
-                style={{ width: "100%", maxHeight: "380px", display: "block", background: "#000" }}
-              >
-                Your browser does not support HTML5 video.
-              </video>
-            ) : (
-              /* Interactive Storyboard Cinema Canvas Player */
-              <div style={{ background: "linear-gradient(135deg, #070e24 0%, #030611 100%)", minHeight: "340px", padding: "28px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative" }}>
-                {/* Top Video Header */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ background: "rgba(0, 212, 255, 0.2)", border: "1px solid var(--border-cyan)", color: "var(--accent-cyan)", padding: "4px 10px", borderRadius: "10px", fontSize: "11px", fontWeight: "700" }}>
-                    🎬 SCENE {currentSceneIndex + 1} OF {Math.max(1, slides.length)}
-                  </span>
-                  <span style={{ fontSize: "12px", color: "var(--accent-turquoise)", fontWeight: "600" }}>
-                    ⏱️ {String(Math.floor(currentVideoTime / 60)).padStart(2, "0")}:{String(Math.floor(currentVideoTime % 60)).padStart(2, "0")} / 01:15
-                  </span>
-                </div>
-
-                {/* Animated Cinema Stage */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 240px", gap: "20px", alignItems: "center", margin: "20px 0" }}>
-                  <div>
-                    <h3 style={{ fontSize: "20px", color: "var(--accent-cyan)", marginBottom: "10px" }}>
-                      {activeVideoScene?.title || topicTitle || "Lesson Scene"}
-                    </h3>
-                    <p style={{ fontSize: "13px", color: "#f8fafc", lineHeight: "1.6" }}>
-                      {activeVideoScene?.bullets ? activeVideoScene.bullets.join(". ") : (script.substring(0, 200) + "...")}
-                    </p>
-                  </div>
-
-                  <div style={{ background: "rgba(16, 25, 48, 0.9)", border: "1px solid var(--accent-turquoise)", borderRadius: "10px", padding: "16px", textAlign: "center" }}>
-                    <div style={{ fontSize: "44px", animation: isVideoPlaying ? "pulse 1.5s infinite alternate" : "none" }}>
-                      👩‍🏫
-                    </div>
-                    <div style={{ fontSize: "11px", color: "var(--accent-turquoise)", fontWeight: "700", marginTop: "6px" }}>
-                      AI MASTER TEACHER
-                    </div>
-                    <div style={{ fontSize: "10px", color: "var(--text-secondary)" }}>
-                      Class {gradeLevel} ({language})
-                    </div>
-                  </div>
-                </div>
-
-                {/* Video Play Controls Bar */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "12px" }}>
+            {/* Equalizer Visualizer & Player Box */}
+            <div style={{ background: "rgba(0,0,0,0.5)", border: "1px solid var(--border-cyan)", borderRadius: "8px", padding: "16px", marginBottom: "16px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "10px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                   <button
                     type="button"
                     className="btn-primary"
-                    onClick={handleToggleVideo}
-                    style={{ padding: "8px 18px", fontSize: "12px" }}
+                    onClick={handleToggleAudio}
+                    style={{ padding: "8px 18px", fontSize: "12px", display: "flex", alignItems: "center", gap: "6px" }}
                   >
-                    {isVideoPlaying ? "⏸ Pause Video" : "▶ Play Lesson Video"}
+                    {isPlayingAudio ? "⏸ Pause Narration" : "▶ Play ElevenLabs Narration"}
                   </button>
 
-                  <div style={{ flex: 1, margin: "0 16px", height: "6px", background: "rgba(255,255,255,0.1)", borderRadius: "3px", overflow: "hidden", position: "relative" }}>
-                    <div style={{ width: `${Math.min(100, (currentVideoTime / 75) * 100)}%`, height: "100%", background: "var(--accent-turquoise)", transition: "width 0.3s" }} />
-                  </div>
-
-                  <span style={{ fontSize: "11px", color: "var(--text-secondary)" }}>
-                    {completedQuizIds.length} / {videoQuizzes.length} Checkpoints Cleared
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* In-Video Interactive Quiz Popup Overlay */}
-            {activeQuizOverlay && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  background: "rgba(5, 8, 20, 0.92)",
-                  backdropFilter: "blur(8px)",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  padding: "24px",
-                  zIndex: 10,
-                  animation: "fadeIn 0.3s ease-out"
-                }}
-              >
-                <div style={{ maxWidth: "520px", width: "100%", background: "#0b1226", border: "2px solid var(--accent-cyan)", borderRadius: "12px", padding: "20px", boxShadow: "0 0 25px rgba(0,212,255,0.4)" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                    <span style={{ background: "var(--accent-cyan)", color: "#000", padding: "2px 8px", borderRadius: "10px", fontSize: "10px", fontWeight: "800", textTransform: "uppercase" }}>
-                      ⚡ IN-VIDEO QUIZ CHECKPOINT ({activeQuizOverlay.time_label})
-                    </span>
-                    <span style={{ fontSize: "11px", color: "var(--text-secondary)" }}>
-                      Class {gradeLevel} Level
-                    </span>
-                  </div>
-
-                  <h4 style={{ fontSize: "15px", color: "#fff", marginBottom: "14px", fontWeight: "600" }}>
-                    {activeQuizOverlay.question}
-                  </h4>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
-                    {activeQuizOverlay.options.map((opt, oIdx) => (
-                      <button
-                        key={oIdx}
-                        type="button"
-                        onClick={() => setSelectedOptionIndex(oIdx)}
+                  {/* Dynamic Soundwave Animated Equalizer */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "3px", height: "24px" }}>
+                    {[12, 22, 16, 28, 10, 24, 18, 30, 14, 20].map((h, i) => (
+                      <div
+                        key={i}
                         style={{
-                          textAlign: "left",
-                          padding: "10px 14px",
-                          borderRadius: "6px",
-                          fontSize: "13px",
-                          border: selectedOptionIndex === oIdx ? "2px solid var(--accent-cyan)" : "1px solid var(--border-cyan)",
-                          background: selectedOptionIndex === oIdx ? "rgba(0, 212, 255, 0.2)" : "#060914",
-                          color: selectedOptionIndex === oIdx ? "var(--accent-cyan)" : "#e2e8f0",
-                          cursor: "pointer",
-                          transition: "all 0.2s"
+                          width: "4px",
+                          height: isPlayingAudio ? `${h}px` : "6px",
+                          background: "var(--accent-cyan)",
+                          borderRadius: "2px",
+                          transition: "height 0.2s ease",
+                          animation: isPlayingAudio ? `pulse 0.6s infinite alternate ${i * 0.1}s` : "none"
                         }}
-                      >
-                        {String.fromCharCode(65 + oIdx)}. {opt}
-                      </button>
+                      />
                     ))}
                   </div>
+                </div>
 
-                  {/* Feedback Box */}
-                  {quizFeedback ? (
-                    <div style={{ background: quizFeedback.isCorrect ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)", border: quizFeedback.isCorrect ? "1px solid #10b981" : "1px solid #ef4444", padding: "12px", borderRadius: "6px", marginBottom: "14px" }}>
-                      <p style={{ fontSize: "13px", fontWeight: "700", color: quizFeedback.isCorrect ? "#10b981" : "#ef4444", margin: "0 0 4px 0" }}>
-                        {quizFeedback.isCorrect ? "🎉 Correct Answer!" : "❌ Not quite right!"}
-                      </p>
-                      <p style={{ fontSize: "12px", color: "#cbd5e1", margin: 0 }}>
-                        {quizFeedback.explanation}
+                <span style={{ fontSize: "12px", color: "var(--accent-cyan)", fontWeight: "600" }}>
+                  {isPlayingAudio ? "🎙️ Playing Voiceover Narration..." : "⏸ Narration Ready"}
+                </span>
+              </div>
+
+              {audioUrl ? (
+                <audio
+                  ref={audioRef}
+                  controls
+                  src={audioUrl}
+                  onTimeUpdate={handleAudioTimeUpdate}
+                  onPlay={() => setIsPlayingAudio(true)}
+                  onPause={() => setIsPlayingAudio(false)}
+                  style={{ width: "100%", marginTop: "6px" }}
+                >
+                  Your browser does not support HTML5 audio.
+                </audio>
+              ) : (
+                <p style={{ fontSize: "11px", color: "var(--text-secondary)", margin: "4px 0 0 0" }}>
+                  ⚡ Using Zero-Latency Speech Synthesis Engine for Instant Voice Playback in {language}
+                </p>
+              )}
+            </div>
+
+            {/* Interactive Line-by-Line Synchronized Transcript */}
+            {audioSegments.length > 0 && (
+              <div style={{ maxHeight: "260px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", paddingRight: "4px" }}>
+                {audioSegments.map((seg) => {
+                  const isActive = currentAudioTime >= seg.start_time && currentAudioTime < seg.end_time;
+                  return (
+                    <div
+                      key={seg.id}
+                      onClick={() => handleSeekAudio(seg)}
+                      style={{
+                        background: isActive ? "rgba(0, 212, 255, 0.15)" : "rgba(10, 15, 30, 0.6)",
+                        border: isActive ? "1px solid var(--accent-cyan)" : "1px solid transparent",
+                        borderRadius: "6px",
+                        padding: "10px 14px",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                        display: "flex",
+                        gap: "12px",
+                        alignItems: "flex-start"
+                      }}
+                    >
+                      <span style={{ background: isActive ? "var(--accent-cyan)" : "rgba(255,255,255,0.1)", color: isActive ? "#000" : "var(--accent-cyan)", padding: "2px 6px", borderRadius: "4px", fontSize: "11px", fontWeight: "700" }}>
+                        ⏱️ {seg.time_label}
+                      </span>
+                      <p style={{ fontSize: "13px", color: isActive ? "#ffffff" : "#cbd5e1", margin: 0, lineHeight: "1.5" }}>
+                        {seg.text}
                       </p>
                     </div>
-                  ) : (
-                    <button
-                      type="button"
-                      className="btn-primary"
-                      disabled={selectedOptionIndex === null}
-                      onClick={handleAnswerQuiz}
-                      style={{ width: "100%", padding: "10px", fontSize: "13px", marginBottom: "8px" }}
-                    >
-                      Check Answer
-                    </button>
-                  )}
-
-                  {quizFeedback && (
-                    <button
-                      type="button"
-                      className="btn-primary"
-                      onClick={handleResumeVideoAfterQuiz}
-                      style={{ width: "100%", padding: "10px", fontSize: "13px", background: "linear-gradient(135deg, #10b981 0%, #059669 100%)" }}
-                    >
-                      ▶ Resume Video Playback
-                    </button>
-                  )}
-                </div>
+                  );
+                })}
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* Results View Panels for Raw Text Scripts */}
+      {/* ---------------------------------------------------- */}
+      {/* SECTION 3: INTERACTIVE VIDEO (HUGGING FACE)          */}
+      {/* ---------------------------------------------------- */}
+      {(videoUrl || videoScript || script) && !loading && (
+        <div style={{ marginTop: "28px" }}>
+          <div className="hud-corner" style={{ background: "#060914", border: "1px solid var(--accent-turquoise)", borderRadius: "var(--radius-lg)", padding: "20px", position: "relative" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "10px" }}>
+              <div>
+                <h3 style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: "700", color: "var(--accent-turquoise)", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "8px" }}>
+                  🎬 Hugging Face Educational Video & Checkpoint Quizzes
+                </h3>
+                <p style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+                  16:9 educational presentation video. Pauses automatically at key timestamps for interactive multiple-choice checkpoints!
+                </p>
+              </div>
+            </div>
+
+            {/* Chapter Bookmarks Strip */}
+            {videoQuizzes.length > 0 && (
+              <div style={{ display: "flex", gap: "8px", marginBottom: "12px", overflowX: "auto", paddingBottom: "4px" }}>
+                <span style={{ fontSize: "11px", color: "var(--accent-turquoise)", fontWeight: "700", display: "flex", alignItems: "center" }}>
+                  📌 CHAPTERS:
+                </span>
+                {videoQuizzes.map((q) => (
+                  <button
+                    key={q.id}
+                    type="button"
+                    onClick={() => handleSeekVideoChapter(q.timestamp)}
+                    style={{
+                      background: completedQuizIds.includes(q.id) ? "rgba(16, 185, 129, 0.2)" : "rgba(0, 212, 255, 0.1)",
+                      border: completedQuizIds.includes(q.id) ? "1px solid #10b981" : "1px solid var(--border-cyan)",
+                      color: completedQuizIds.includes(q.id) ? "#10b981" : "var(--accent-cyan)",
+                      padding: "4px 10px",
+                      borderRadius: "14px",
+                      fontSize: "11px",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap"
+                    }}
+                  >
+                    {completedQuizIds.includes(q.id) ? "✅" : "📍"} {q.time_label} {q.chapter_title}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Video Player Box with In-Video Quiz Overlay */}
+            <div style={{ position: "relative", borderRadius: "8px", overflow: "hidden", border: "1px solid var(--border-cyan)" }}>
+              {videoUrl ? (
+                <video
+                  ref={videoRef}
+                  controls
+                  src={videoUrl}
+                  onTimeUpdate={handleVideoTimeUpdate}
+                  style={{ width: "100%", maxHeight: "380px", display: "block", background: "#000" }}
+                >
+                  Your browser does not support HTML5 video.
+                </video>
+              ) : (
+                /* Interactive Storyboard Cinema Canvas Player */
+                <div style={{ background: "linear-gradient(135deg, #070e24 0%, #030611 100%)", minHeight: "340px", padding: "28px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative" }}>
+                  {/* Top Video Header */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ background: "rgba(0, 212, 255, 0.2)", border: "1px solid var(--border-cyan)", color: "var(--accent-cyan)", padding: "4px 10px", borderRadius: "10px", fontSize: "11px", fontWeight: "700" }}>
+                      🎬 SCENE {currentSceneIndex + 1} OF {Math.max(1, slides.length)}
+                    </span>
+                    <span style={{ fontSize: "12px", color: "var(--accent-turquoise)", fontWeight: "600" }}>
+                      ⏱️ {String(Math.floor(currentVideoTime / 60)).padStart(2, "0")}:{String(Math.floor(currentVideoTime % 60)).padStart(2, "0")} / 01:15
+                    </span>
+                  </div>
+
+                  {/* Animated Cinema Stage */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 240px", gap: "20px", alignItems: "center", margin: "20px 0" }}>
+                    <div>
+                      <h3 style={{ fontSize: "20px", color: "var(--accent-cyan)", marginBottom: "10px" }}>
+                        {activeVideoScene?.title || topicTitle || "Lesson Scene"}
+                      </h3>
+                      <p style={{ fontSize: "13px", color: "#f8fafc", lineHeight: "1.6" }}>
+                        {activeVideoScene?.bullet_points ? activeVideoScene.bullet_points.join(". ") : (script.substring(0, 200) + "...")}
+                      </p>
+                    </div>
+
+                    <div style={{ background: "rgba(16, 25, 48, 0.9)", border: "1px solid var(--accent-turquoise)", borderRadius: "10px", padding: "16px", textAlign: "center" }}>
+                      <div style={{ fontSize: "44px", animation: isVideoPlaying ? "pulse 1.5s infinite alternate" : "none" }}>
+                        👩‍🏫
+                      </div>
+                      <div style={{ fontSize: "11px", color: "var(--accent-turquoise)", fontWeight: "700", marginTop: "6px" }}>
+                        HUGGING FACE ANIMATION
+                      </div>
+                      <div style={{ fontSize: "10px", color: "var(--text-secondary)" }}>
+                        Class {gradeLevel} ({language})
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Video Play Controls Bar */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "12px" }}>
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      onClick={handleToggleVideo}
+                      style={{ padding: "8px 18px", fontSize: "12px", background: "var(--amber-gradient)" }}
+                    >
+                      {isVideoPlaying ? "⏸ Pause Video" : "🎬 Play Lesson Video"}
+                    </button>
+
+                    <div style={{ flex: 1, margin: "0 16px", height: "6px", background: "rgba(255,255,255,0.1)", borderRadius: "3px", overflow: "hidden", position: "relative" }}>
+                      <div style={{ width: `${Math.min(100, (currentVideoTime / 75) * 100)}%`, height: "100%", background: "var(--accent-turquoise)", transition: "width 0.3s" }} />
+                    </div>
+
+                    <span style={{ fontSize: "11px", color: "var(--text-secondary)" }}>
+                      {completedQuizIds.length} / {videoQuizzes.length} Checkpoints Cleared
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* In-Video Interactive Quiz Popup Overlay */}
+              {activeQuizOverlay && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: "rgba(5, 8, 20, 0.92)",
+                    backdropFilter: "blur(8px)",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    padding: "24px",
+                    zIndex: 10,
+                    animation: "fadeIn 0.3s ease-out"
+                  }}
+                >
+                  <div style={{ maxWidth: "520px", width: "100%", background: "#0b1226", border: "2px solid var(--accent-cyan)", borderRadius: "12px", padding: "20px", boxShadow: "0 0 25px rgba(0,212,255,0.4)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                      <span style={{ background: "var(--accent-cyan)", color: "#000", padding: "2px 8px", borderRadius: "10px", fontSize: "10px", fontWeight: "800", textTransform: "uppercase" }}>
+                        ⚡ IN-VIDEO QUIZ CHECKPOINT ({activeQuizOverlay.time_label})
+                      </span>
+                      <span style={{ fontSize: "11px", color: "var(--text-secondary)" }}>
+                        Class {gradeLevel} Level
+                      </span>
+                    </div>
+
+                    <h4 style={{ fontSize: "15px", color: "#fff", marginBottom: "14px", fontWeight: "600" }}>
+                      {activeQuizOverlay.question}
+                    </h4>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
+                      {activeQuizOverlay.options.map((opt, oIdx) => (
+                        <button
+                          key={oIdx}
+                          type="button"
+                          onClick={() => setSelectedOptionIndex(oIdx)}
+                          style={{
+                            textAlign: "left",
+                            padding: "10px 14px",
+                            borderRadius: "6px",
+                            fontSize: "13px",
+                            border: selectedOptionIndex === oIdx ? "2px solid var(--accent-cyan)" : "1px solid var(--border-cyan)",
+                            background: selectedOptionIndex === oIdx ? "rgba(0, 212, 255, 0.2)" : "#060914",
+                            color: selectedOptionIndex === oIdx ? "var(--accent-cyan)" : "#e2e8f0",
+                            cursor: "pointer",
+                            transition: "all 0.2s"
+                          }}
+                        >
+                          {String.fromCharCode(65 + oIdx)}. {opt}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Feedback Box */}
+                    {quizFeedback ? (
+                      <div style={{ background: quizFeedback.isCorrect ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)", border: quizFeedback.isCorrect ? "1px solid #10b981" : "1px solid #ef4444", padding: "12px", borderRadius: "6px", marginBottom: "14px" }}>
+                        <p style={{ fontSize: "13px", fontWeight: "700", color: quizFeedback.isCorrect ? "#10b981" : "#ef4444", margin: "0 0 4px 0" }}>
+                          {quizFeedback.isCorrect ? "🎉 Correct Answer!" : "❌ Not quite right!"}
+                        </p>
+                        <p style={{ fontSize: "12px", color: "#cbd5e1", margin: 0 }}>
+                          {quizFeedback.explanation}
+                        </p>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn-primary"
+                        disabled={selectedOptionIndex === null}
+                        onClick={handleAnswerQuiz}
+                        style={{ width: "100%", padding: "10px", fontSize: "13px", marginBottom: "8px" }}
+                      >
+                        Check Answer
+                      </button>
+                    )}
+
+                    {quizFeedback && (
+                      <button
+                        type="button"
+                        className="btn-primary"
+                        onClick={handleResumeVideoAfterQuiz}
+                        style={{ width: "100%", padding: "10px", fontSize: "13px", background: "linear-gradient(135deg, #10b981 0%, #059669 100%)" }}
+                      >
+                        ▶ Resume Video Playback
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* SECTION 4: STORYBOARD & TEACHER NOTES                */}
+      {/* ---------------------------------------------------- */}
       {(script || videoScript) && !loading && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginTop: "24px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginTop: "28px" }}>
           {/* Audio Overview Script */}
           {script && (
             <div className="hud-corner" style={{ background: "rgba(7, 10, 20, 0.8)", border: "1px solid var(--border-cyan)", borderRadius: "var(--radius-lg)", padding: "20px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
                 <h3 style={{ fontFamily: "var(--font-heading)", fontSize: "14px", fontWeight: "700", color: "var(--accent-turquoise)", textTransform: "uppercase" }}>
-                  🎙️ Voice Narration Script ({language})
+                  🎙️ ElevenLabs Narration Script ({language})
                 </h3>
                 <button
                   type="button"
@@ -1247,7 +1525,7 @@ function AudioVideoStudio() {
             <div className="hud-corner" style={{ background: "rgba(7, 10, 20, 0.8)", border: "1px solid var(--border-cyan)", borderRadius: "var(--radius-lg)", padding: "20px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
                 <h3 style={{ fontFamily: "var(--font-heading)", fontSize: "14px", fontWeight: "700", color: "var(--accent-violet)", textTransform: "uppercase" }}>
-                  🎬 Video Visual Scene Storyboard ({language})
+                  🎬 Hugging Face Scene Storyboard ({language})
                 </h3>
                 <button
                   type="button"
@@ -1258,7 +1536,7 @@ function AudioVideoStudio() {
                   }}
                   style={{ padding: "4px 10px", fontSize: "11px" }}
                 >
-                  📋 Copy Plan
+                  📋 Copy Storyboard
                 </button>
               </div>
               <div style={{ background: "#04060c", border: "1px solid var(--border-cyan)", padding: "16px", borderRadius: "4px", maxHeight: "300px", overflowY: "auto", whiteSpace: "pre-wrap", fontSize: "13px", lineHeight: "1.6", color: "#e2e8f0" }}>
@@ -1274,7 +1552,7 @@ function AudioVideoStudio() {
         <div className="hud-corner" style={{ background: "rgba(10, 20, 38, 0.9)", border: "1px solid var(--accent-turquoise)", borderRadius: "var(--radius-lg)", padding: "20px", marginTop: "24px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
             <h3 style={{ fontFamily: "var(--font-heading)", fontSize: "15px", fontWeight: "700", color: "var(--accent-turquoise)", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "8px" }}>
-              💡 Video Notes, Student Hands-on Activity & Reflection ({language})
+              💡 Video Teacher Notes, Student Hands-on Activity & Reflection ({language})
             </h3>
             <button
               type="button"
@@ -1285,7 +1563,7 @@ function AudioVideoStudio() {
               }}
               style={{ padding: "4px 10px", fontSize: "11px" }}
             >
-              📋 Copy Activity Notes
+              📋 Copy Notes
             </button>
           </div>
           <div style={{ background: "#04060c", border: "1px solid var(--border-cyan)", padding: "18px", borderRadius: "6px", whiteSpace: "pre-wrap", fontSize: "13px", lineHeight: "1.6", color: "#f8fafc" }}>

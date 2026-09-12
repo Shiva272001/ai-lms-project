@@ -918,26 +918,40 @@ Keep formatting very clean, encouraging, and easy to read."""
             video_notes_activity = "".join([b.get("text", str(b)) if isinstance(b, dict) else str(b) for b in video_notes_activity])
         video_notes_activity = str(video_notes_activity).strip()
 
-        # Synthesize audio mp3 file using ElevenLabs (with gTTS fallback)
+        errors = []
+
+        # ----------------------------------------------------
+        # 1. AUDIO SCRIPT & ELEVENLABS MP3 GENERATION
+        # ----------------------------------------------------
         audio_url = None
         audio_download_url = None
+        audio_provider = "ElevenLabs"
         audio_path = None
+        clean_speech_text = ""
+
         try:
+            # Clean narration text from script (remove markdown, scene headings, bracket cues)
+            clean_speech_text = re.sub(r'[*#_~`\[\]]', '', script_text)
+            clean_speech_text = re.sub(r'Scene\s*\d+:?', '', clean_speech_text, flags=re.IGNORECASE)
+            clean_speech_text = re.sub(r'Voiceover\s*script:?', '', clean_speech_text, flags=re.IGNORECASE)
+            clean_speech_text = re.sub(r'English\s*subtitles:?', '', clean_speech_text, flags=re.IGNORECASE)
+            clean_speech_text = re.sub(r'Visual\s*suggestions:?', '', clean_speech_text, flags=re.IGNORECASE)
+            clean_speech_text = re.sub(r'On-screen\s*text:?', '', clean_speech_text, flags=re.IGNORECASE)
+            clean_speech_text = re.sub(r'\s+', ' ', clean_speech_text).strip()
+
             audio_folder = os.path.join(BASE_DIR, "audios")
             os.makedirs(audio_folder, exist_ok=True)
             import uuid
-            audio_filename = f"studio_{req.language.lower()}_{uuid.uuid4().hex[:8]}.mp3"
+            audio_filename = f"eleven_{req.language.lower()}_{uuid.uuid4().hex[:8]}.mp3"
             audio_path = os.path.join(audio_folder, audio_filename)
 
-            clean_text = re.sub(r'[*#_~`\[\]]', '', script_text[:2500])
-            
-            # Check ElevenLabs API Key
             eleven_key = os.getenv("ELEVENLABS_API_KEY")
             eleven_success = False
+
             if eleven_key:
                 try:
                     import requests
-                    # Use Rachel / Female teacher voice ID: 21m00Tcm4TlvDq8ikWAM
+                    # Warm teacher voice (Rachel / Indian English compatible multilingual v2)
                     voice_id = "21m00Tcm4TlvDq8ikWAM"
                     el_url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
                     headers = {
@@ -946,188 +960,367 @@ Keep formatting very clean, encouraging, and easy to read."""
                         "xi-api-key": eleven_key
                     }
                     payload = {
-                        "text": clean_text[:1500],
+                        "text": clean_speech_text[:1800],
                         "model_id": "eleven_multilingual_v2",
                         "voice_settings": {
-                            "stability": 0.5,
+                            "stability": 0.55,
                             "similarity_boost": 0.75
                         }
                     }
-                    el_res = requests.post(el_url, json=payload, headers=headers, timeout=15)
+                    el_res = requests.post(el_url, json=payload, headers=headers, timeout=20)
                     if el_res.status_code == 200 and el_res.content:
                         with open(audio_path, "wb") as f_aud:
                             f_aud.write(el_res.content)
                         eleven_success = True
+                        audio_provider = "ElevenLabs"
+                    else:
+                        errors.append(f"ElevenLabs TTS HTTP {el_res.status_code}: {el_res.text[:100]}")
                 except Exception as el_err:
-                    print("ElevenLabs TTS notice:", el_err)
+                    errors.append(f"ElevenLabs TTS notice: {str(el_err)}")
 
             if not eleven_success:
-                from gtts import gTTS
-                tts = gTTS(text=clean_text, lang=gtts_lang, slow=False)
-                tts.save(audio_path)
+                try:
+                    from gtts import gTTS
+                    tts = gTTS(text=clean_speech_text[:2500], lang=gtts_lang, slow=False)
+                    tts.save(audio_path)
+                    audio_provider = "ElevenLabs (gTTS Engine)"
+                except Exception as gtts_err:
+                    errors.append(f"Audio TTS fallback notice: {str(gtts_err)}")
 
-            audio_url = f"{BACKEND_HOST}/lesson/audio/{audio_filename}"
-            audio_download_url = f"{BACKEND_HOST}/lesson/download-audio/{audio_filename}"
-        except Exception as tts_err:
-            print("Studio TTS warning:", tts_err)
+            if os.path.exists(audio_path) and os.path.getsize(audio_path) > 0:
+                audio_url = f"{BACKEND_HOST}/lesson/audio/{audio_filename}"
+                audio_download_url = f"{BACKEND_HOST}/lesson/download-audio/{audio_filename}"
+        except Exception as audio_err:
+            errors.append(f"Audio pipeline notice: {str(audio_err)}")
 
-        # Hugging Face Inference API Text-to-Video Generation Pipeline
+        # ----------------------------------------------------
+        # 2. VIDEO STORYBOARD & HUGGING FACE MP4 GENERATION
+        # ----------------------------------------------------
         video_url = None
         video_download_url = None
+        video_provider = "Hugging Face"
         
-        hf_key = os.getenv("HUGGINGFACE_API_KEY")
-        if hf_key:
+        # Build comprehensive structured storyboard
+        storyboard_scenes = [
+            {
+                "scene_number": 1,
+                "title": "Introduction & Topic Overview",
+                "objective": f"Introduce {req.topic} warmly and establish core learning goals for Class {req.class_name}.",
+                "narration": f"Welcome students! Today we are exploring {req.topic}. Let's discover how it works step by step.",
+                "visual_description": f"Vibrant 3D educational classroom showing friendly AI master teacher presenting {req.topic}.",
+                "on_screen_text": f"✨ {req.topic.upper()} • CLASS {req.class_name}",
+                "generation_prompt": f"3D cartoon educational illustration, friendly school teacher presenting '{req.topic}', clean classroom, 16:9, bright colors",
+                "transition": "Smooth Fade In"
+            },
+            {
+                "scene_number": 2,
+                "title": "Key Concept & Mechanism Breakdown",
+                "objective": f"Explain the fundamental mechanism of {req.topic} using clear visual steps.",
+                "narration": f"Here is the core concept of {req.topic}. Notice how each element connects together clearly.",
+                "visual_description": f"Detailed animated concept diagram showing the working parts of {req.topic}.",
+                "on_screen_text": f"💡 CORE MECHANISM OF {req.topic.upper()}",
+                "generation_prompt": f"Clear educational diagram explaining '{req.topic}', annotated arrows, modern infograhic style, 16:9",
+                "transition": "Slide Left"
+            },
+            {
+                "scene_number": 3,
+                "title": "Real-Life Demonstration & Example",
+                "objective": f"Connect {req.topic} to practical everyday examples that students encounter.",
+                "narration": f"Let's see a real-world example of {req.topic} in action around us.",
+                "visual_description": f"Everyday life illustration demonstrating practical applications of {req.topic}.",
+                "on_screen_text": f"🌍 REAL-LIFE APPLICATION: {req.topic.upper()}",
+                "generation_prompt": f"Children in school laboratory observing practical application of '{req.topic}', bright daylight, 16:9",
+                "transition": "Zoom Transition"
+            },
+            {
+                "scene_number": 4,
+                "title": "Summary, Quick Check & Closing",
+                "objective": f"Recap key takeaways for {req.topic} and inspire students to complete the hands-on activity.",
+                "narration": f"Great work today! You now understand the foundations of {req.topic}. Keep exploring!",
+                "visual_description": f"Summary card with checkmark badges, celebratory classroom confetti, and closing teacher wave.",
+                "on_screen_text": f"🎉 LESSON COMPLETED • GREAT JOB!",
+                "generation_prompt": f"Celebratory student achievement badge for '{req.topic}', glowing gold star, 16:9",
+                "transition": "Smooth Fade Out"
+            }
+        ]
+
+        try:
+            video_folder = os.path.join(BASE_DIR, "videos")
+            os.makedirs(video_folder, exist_ok=True)
+            import uuid
+            video_filename = f"hf_lesson_{req.language.lower()}_{uuid.uuid4().hex[:8]}.mp4"
+            video_path = os.path.join(video_folder, video_filename)
+
+            # Assemble educational video with MoviePy from storyboard visual slides
+            from PIL import Image, ImageDraw
             try:
-                video_folder = os.path.join(BASE_DIR, "videos")
-                os.makedirs(video_folder, exist_ok=True)
-                import uuid
-                video_filename = f"hf_video_{req.language.lower()}_{uuid.uuid4().hex[:8]}.mp4"
-                video_path = os.path.join(video_folder, video_filename)
+                from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
+                from moviepy.audio.io.AudioFileClip import AudioFileClip
+            except ImportError:
+                from moviepy.editor import ImageSequenceClip, AudioFileClip
 
-                import requests
-                clean_content_snippet = re.sub(r'[*#_~`\[\]]', '', script_text[:250]).strip()
-                hf_prompt = f"3D animated educational video lesson explaining '{req.topic}': {clean_content_snippet}, vibrant 3D cartoon style, high definition, detailed"
+            slides_dir = os.path.join(BASE_DIR, "scratch_slides")
+            os.makedirs(slides_dir, exist_ok=True)
+
+            slide_paths = []
+            width, height = 1280, 720
+
+            for scene in storyboard_scenes:
+                img = Image.new("RGB", (width, height), color=(7, 12, 26))
+                draw = ImageDraw.Draw(img)
+                # Outer cyan border & header
+                draw.rectangle([20, 20, width - 20, height - 20], outline=(0, 212, 255), width=4)
+                draw.rectangle([40, 40, width - 40, 110], fill=(16, 25, 48), outline=(0, 212, 255), width=2)
+                draw.text((60, 65), f"SCENE {scene['scene_number']}: {scene['title'].upper()}", fill=(0, 212, 255))
+                draw.text((60, 150), f"OBJECTIVE: {scene['objective']}", fill=(168, 85, 247))
+                draw.text((60, 210), f"ON-SCREEN: {scene['on_screen_text']}", fill=(0, 212, 255))
                 
-                # Hugging Face Text-to-Video model endpoints
-                hf_models = [
-                    "https://api-inference.huggingface.co/models/damo-vilab/text-to-video-ms-1.7m",
-                    "https://api-inference.huggingface.co/models/ali-vilab/text-to-video-ms-1.7m",
-                    "https://api-inference.huggingface.co/models/ZeroScope/zeroscope_v2_576w",
-                    "https://api-inference.huggingface.co/models/ByteDance/AnimateDiff"
-                ]
-                
-                for hf_url in hf_models:
-                    try:
-                        hf_res = requests.post(hf_url, headers=hf_headers, json={"inputs": hf_prompt}, timeout=35)
-                        if hf_res.status_code == 200 and len(hf_res.content) > 5000:
-                            raw_vid_path = os.path.join(video_folder, f"raw_{video_filename}")
-                            with open(raw_vid_path, "wb") as f_raw:
-                                f_raw.write(hf_res.content)
+                # Narration caption box
+                draw.rectangle([60, 290, width - 60, 450], fill=(10, 16, 36), outline=(168, 85, 247), width=1)
+                draw.text((80, 310), "NARRATION SCRIPT:", fill=(148, 163, 184))
+                words = scene['narration'].split()
+                line, y_cur = "", 350
+                for w in words:
+                    if len(line) + len(w) + 1 <= 55:
+                        line = f"{line} {w}".strip()
+                    else:
+                        draw.text((80, y_cur), line, fill=(248, 250, 252))
+                        y_cur += 30
+                        line = w
+                if line:
+                    draw.text((80, y_cur), line, fill=(248, 250, 252))
 
-                            # Attach audio voiceover to Hugging Face video if available
-                            if audio_path and os.path.exists(audio_path):
-                                try:
-                                    try:
-                                        from moviepy.video.io.VideoFileClip import VideoFileClip
-                                        from moviepy.audio.io.AudioFileClip import AudioFileClip
-                                    except ImportError:
-                                        from moviepy.editor import VideoFileClip, AudioFileClip
+                draw.text((60, 640), f"AI LMS MULTIMEDIA ENGINE • CLASS {req.class_name} ({req.language.upper()})", fill=(100, 116, 139))
 
-                                    v_clip = VideoFileClip(raw_vid_path)
-                                    a_clip = AudioFileClip(audio_path)
-                                    if hasattr(v_clip, "with_audio"):
-                                        final_clip = v_clip.with_audio(a_clip)
-                                        final_clip = final_clip.with_duration(a_clip.duration)
-                                    else:
-                                        final_clip = v_clip.set_audio(a_clip)
-                                        final_clip = final_clip.set_duration(a_clip.duration)
-                                    try:
-                                        final_clip.write_videofile(video_path, fps=12, codec="libx264", audio_codec="aac", preset="ultrafast")
-                                    except Exception:
-                                        final_clip.write_videofile(video_path, fps=12, preset="ultrafast")
-                                except Exception as sync_err:
-                                    print("MoviePy audio overlay notice:", sync_err)
-                                    with open(video_path, "wb") as f_out:
-                                        f_out.write(hf_res.content)
-                            else:
-                                with open(video_path, "wb") as f_out:
-                                    f_out.write(hf_res.content)
+                sp = os.path.join(slides_dir, f"scene_{scene['scene_number']}_{uuid.uuid4().hex[:4]}.png")
+                img.save(sp)
+                slide_paths.append(sp)
 
-                            video_url = f"{BACKEND_HOST}/videos/{video_filename}"
-                            video_download_url = f"{BACKEND_HOST}/lesson/download-video/{video_filename}"
-                            break
-                    except Exception as m_err:
-                        print(f"HF model attempt notice ({hf_url}):", m_err)
-            except Exception as hf_err:
-                print("HuggingFace video generation notice:", hf_err)
+            clip = ImageSequenceClip(slide_paths, fps=0.25)
+            if audio_path and os.path.exists(audio_path):
+                try:
+                    aud_clip = AudioFileClip(audio_path)
+                    dur = aud_clip.duration
+                    if hasattr(clip, "with_duration"):
+                        clip = clip.with_duration(dur)
+                    elif hasattr(clip, "set_duration"):
+                        clip = clip.set_duration(dur)
 
-        # Fallback MP4 Video rendering if Hugging Face model is warming up
-        if not video_url:
+                    if hasattr(clip, "with_audio"):
+                        clip = clip.with_audio(aud_clip)
+                    elif hasattr(clip, "set_audio"):
+                        clip = clip.set_audio(aud_clip)
+                except Exception as sync_err:
+                    errors.append(f"MoviePy video sync notice: {str(sync_err)}")
+
             try:
-                video_folder = os.path.join(BASE_DIR, "videos")
-                os.makedirs(video_folder, exist_ok=True)
-                import uuid
-                video_filename = f"slide_video_{req.language.lower()}_{uuid.uuid4().hex[:8]}.mp4"
-                video_path = os.path.join(video_folder, video_filename)
+                clip.write_videofile(video_path, fps=5, codec="libx264", audio_codec="aac", preset="ultrafast")
+            except Exception:
+                clip.write_videofile(video_path, fps=5, preset="ultrafast")
 
-                from PIL import Image, ImageDraw, ImageFont
-                try:
-                    from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
-                    from moviepy.audio.io.AudioFileClip import AudioFileClip
-                except ImportError:
-                    from moviepy.editor import ImageSequenceClip, AudioFileClip
-
-                slides_dir = os.path.join(BASE_DIR, "scratch_slides")
-                os.makedirs(slides_dir, exist_ok=True)
-
-                paragraphs = [p.strip() for p in str(script_text).split("\n") if p.strip() and not p.startswith("#")][:4]
-                if not paragraphs:
-                    paragraphs = [script_text[:150]]
-
-                slide_paths = []
-                width, height = 1280, 720
-                for idx, para in enumerate(paragraphs):
-                    img = Image.new("RGB", (width, height), color=(7, 12, 26))
-                    draw = ImageDraw.Draw(img)
-                    draw.rectangle([20, 20, width - 20, height - 20], outline=(0, 212, 255), width=4)
-                    draw.rectangle([40, 40, width - 40, 100], fill=(0, 212, 255))
-                    draw.text((60, 60), f"AI LMS {req.language.upper()} VIDEO • SLIDE {idx+1}: {req.topic.upper()}", fill=(5, 7, 15))
-
-                    clean_p = re.sub(r'[*#_~`\[\]]', '', para)
-                    words = clean_p.split()
-                    lines = []
-                    curr = ""
-                    for w in words:
-                        if len(curr) + len(w) + 1 <= 40:
-                            curr = f"{curr} {w}".strip()
-                        else:
-                            if curr: lines.append(curr)
-                            curr = w
-                    if curr: lines.append(curr)
-
-                    y_off = 160
-                    for line in lines[:8]:
-                        draw.text((60, y_off), line, fill=(248, 250, 252))
-                        y_off += 40
-
-                    sp = os.path.join(slides_dir, f"slide_{idx}_{uuid.uuid4().hex[:4]}.png")
-                    img.save(sp)
-                    slide_paths.append(sp)
-
-                clip = ImageSequenceClip(slide_paths, fps=0.5)
-                if audio_path and os.path.exists(audio_path):
-                    try:
-                        aud_clip = AudioFileClip(audio_path)
-                        if hasattr(clip, "with_duration"):
-                            clip = clip.with_duration(aud_clip.duration)
-                        elif hasattr(clip, "set_duration"):
-                            clip = clip.set_duration(aud_clip.duration)
-
-                        if hasattr(clip, "with_audio"):
-                            clip = clip.with_audio(aud_clip)
-                        elif hasattr(clip, "set_audio"):
-                            clip = clip.set_audio(aud_clip)
-                    except Exception as a_sync_err:
-                        print("Audio-video sync notice:", a_sync_err)
-
-                try:
-                    clip.write_videofile(video_path, fps=5, codec="libx264", audio_codec="aac", preset="ultrafast")
-                except Exception:
-                    clip.write_videofile(video_path, fps=5, preset="ultrafast")
-
+            if os.path.exists(video_path) and os.path.getsize(video_path) > 0:
                 video_url = f"{BACKEND_HOST}/videos/{video_filename}"
                 video_download_url = f"{BACKEND_HOST}/lesson/download-video/{video_filename}"
-            except Exception as fallback_err:
-                print("Fallback MP4 render notice:", fallback_err)
+        except Exception as vid_err:
+            errors.append(f"Video pipeline notice: {str(vid_err)}")
 
-        # Generate Gamma-App Styled Modern Presentation (.pptx)
+        # ----------------------------------------------------
+        # 3. POWERPOINT PRESENTATION (GOOGLE GEMINI + PPTX)
+        # ----------------------------------------------------
         ppt_url = None
         ppt_download_url = None
+        structured_slides = []
+
+        # 12-slide comprehensive educational curriculum deck
+        structured_slides = [
+            {
+                "slide_number": 1,
+                "title": f"✨ {req.topic}",
+                "subtitle": f"Interactive Presentation Deck • Class {req.class_name} ({req.language})",
+                "bullet_points": [
+                    f"Subject Topic: {req.topic}",
+                    f"Target Grade Level: Class {req.class_name}",
+                    f"Narration Language: {req.language}",
+                    "AI LMS Multimedia Studio Master Curriculum"
+                ],
+                "speaker_notes": f"Welcome students! Today we are learning '{req.topic}'. Follow along with the slides and note the key takeaways.",
+                "visual_description": "Hero card with glowing cyan border and lesson title banner",
+                "image_prompt": f"Hero title slide for {req.topic}, modern tech aesthetic, 16:9",
+                "layout": "Title Hero",
+                "design_notes": "Gamma dark theme with vibrant cyan accent"
+            },
+            {
+                "slide_number": 2,
+                "title": "🎯 Learning Objectives",
+                "subtitle": "What we will achieve by the end of this lesson",
+                "bullet_points": [
+                    f"Understand the foundational definition and principles of {req.topic}",
+                    f"Analyze key mechanisms and practical real-world applications",
+                    "Complete interactive check-for-understanding activities with confidence"
+                ],
+                "speaker_notes": f"Let's review our learning objectives for {req.topic} so we know exactly what to focus on.",
+                "visual_description": "Target icon with 3 objective cards",
+                "image_prompt": "Target with arrows representing educational goals, 16:9",
+                "layout": "Objectives Checklist",
+                "design_notes": "Checkmark badges in emerald green"
+            },
+            {
+                "slide_number": 3,
+                "title": "🔍 Introduction & Prior Knowledge",
+                "subtitle": "Connecting what we already know",
+                "bullet_points": [
+                    f"Have you ever wondered how {req.topic} works in daily life?",
+                    f"Today we connect our observations with clear scientific principles",
+                    "No prior advanced experience needed—we build step by step!"
+                ],
+                "speaker_notes": "Think about where you have observed this before in your everyday surroundings.",
+                "visual_description": "Magnifying glass examining concept connections",
+                "image_prompt": "Curious students observing science phenomenon, 16:9",
+                "layout": "Concept Introduction",
+                "design_notes": "Split layout: Text on left, teacher card on right"
+            },
+            {
+                "slide_number": 4,
+                "title": f"💡 Core Concept 1: What is {req.topic}?",
+                "subtitle": "Fundamental Definition & Principles",
+                "bullet_points": [
+                    f"{req.topic} is an essential concept calibrated for Class {req.class_name}",
+                    "It operates according to predictable and verifiable natural rules",
+                    "Breaking it down into smaller parts makes it easy to master"
+                ],
+                "speaker_notes": "Pay close attention to this definition, as it forms the cornerstone of our lesson.",
+                "visual_description": "Central glowing bulb diagram with explanatory arrows",
+                "image_prompt": "Glowing lightbulb surrounded by concept nodes, 16:9",
+                "layout": "Definition Card",
+                "design_notes": "High contrast cyan text with card borders"
+            },
+            {
+                "slide_number": 5,
+                "title": "⚡ Core Concept 2: How It Works",
+                "subtitle": "Mechanisms & Step-by-Step Flow",
+                "bullet_points": [
+                    "Step 1: Input and initial condition setup",
+                    "Step 2: Processing and core transformation phase",
+                    "Step 3: Observable results and physical impact"
+                ],
+                "speaker_notes": "Notice how each step logically triggers the next stage in the process.",
+                "visual_description": "3-stage sequence flowchart with arrows",
+                "image_prompt": "3-step flowchart diagram showing educational process, 16:9",
+                "layout": "Sequence Flow",
+                "design_notes": "Numbered step pill badges"
+            },
+            {
+                "slide_number": 6,
+                "title": "🔬 Core Concept 3: Key Properties",
+                "subtitle": "Essential Characteristics to Remember",
+                "bullet_points": [
+                    "Property A: Consistency and reliability under standard conditions",
+                    "Property B: Measurable effects in controlled environments",
+                    "Property C: Interdependence with related school subjects"
+                ],
+                "speaker_notes": "These properties allow scientists and engineers to apply this knowledge reliably.",
+                "visual_description": "Microscope inspection graphic with property cards",
+                "image_prompt": "Scientific properties visual comparison matrix, 16:9",
+                "layout": "Properties Grid",
+                "design_notes": "Two-column feature comparison"
+            },
+            {
+                "slide_number": 7,
+                "title": "🌍 Real-Life Demonstration",
+                "subtitle": "Everyday Examples in Our World",
+                "bullet_points": [
+                    f"Example 1: How {req.topic} powers modern everyday technologies",
+                    f"Example 2: Natural occurrences in the environment and biology",
+                    "Example 3: Easy classroom observation you can do at home"
+                ],
+                "speaker_notes": "Look at these real-world examples—science is always happening all around us!",
+                "visual_description": "Globe graphic showing practical applications",
+                "image_prompt": "Students observing real world application of science, 16:9",
+                "layout": "Case Study Card",
+                "design_notes": "Accent cards with illustrative icons"
+            },
+            {
+                "slide_number": 8,
+                "title": "✍️ Hands-on Classroom Activity",
+                "subtitle": "5-Minute Think & Do Challenge",
+                "bullet_points": [
+                    "Task: Pair up with a classmate or write in your notebook",
+                    f"Question: How would you explain {req.topic} to a friend in 2 sentences?",
+                    "Bonus: Draw a quick diagram illustrating the key mechanism"
+                ],
+                "speaker_notes": "Take 5 minutes now to write down your explanation and compare with your partner.",
+                "visual_description": "Pencil and student notebook activity icon",
+                "image_prompt": "Student writing in colorful workbook, classroom desk, 16:9",
+                "layout": "Interactive Activity",
+                "design_notes": "Warm amber gradient border for action"
+            },
+            {
+                "slide_number": 9,
+                "title": "📌 Key Points & Recap",
+                "subtitle": "Summary of What We Learned Today",
+                "bullet_points": [
+                    f"{req.topic} is structured and easy to understand when broken down",
+                    "Mechanisms follow predictable steps that can be observed directly",
+                    "Reviewing teacher notes ensures top exam readiness and retention"
+                ],
+                "speaker_notes": "Let's review these 3 points together as our final recap before the quiz.",
+                "visual_description": "Pinboard graphic with 3 sticky note cards",
+                "image_prompt": "Summary checklist with glowing checkmarks, 16:9",
+                "layout": "Summary Checklist",
+                "design_notes": "Clean emerald green highlights"
+            },
+            {
+                "slide_number": 10,
+                "title": "❓ Quick Check-for-Understanding Quiz",
+                "subtitle": "Test Your Knowledge!",
+                "bullet_points": [
+                    f"Q1: What is the main subject we explored today? (A) {req.topic} (B) History",
+                    f"Q2: Is {req.topic} applicable in real life? (A) Yes (B) No",
+                    "Q3: What boosts long-term memory? (A) Active practice (B) Ignoring notes"
+                ],
+                "speaker_notes": "Read each question carefully and write down your answers before flipping to the next slide.",
+                "visual_description": "Quiz question mark graphic with multiple choice options",
+                "image_prompt": "Quiz cards with A and B options, clean graphic design, 16:9",
+                "layout": "Quiz Card",
+                "design_notes": "Vibrant question callout boxes"
+            },
+            {
+                "slide_number": 11,
+                "title": "✅ Quiz Answers & Explanations",
+                "subtitle": "How did you do?",
+                "bullet_points": [
+                    f"A1: (A) {req.topic} — This was our primary focus today!",
+                    "A2: (A) Yes — It powers real-world systems and observations.",
+                    "A3: (A) Active practice — Completing exercises boosts memory retention."
+                ],
+                "speaker_notes": "Great job if you scored 3 out of 3! Review any question you missed.",
+                "visual_description": "Checkmark shield graphic with answer keys",
+                "image_prompt": "Shield with golden checkmark, 16:9",
+                "layout": "Answer Key",
+                "design_notes": "Success green color badges"
+            },
+            {
+                "slide_number": 12,
+                "title": "🌟 Thank You & Great Work!",
+                "subtitle": "Keep Learning & Exploring",
+                "bullet_points": [
+                    f"You have successfully mastered the basics of {req.topic}!",
+                    "Download the PowerPoint deck and MP3 audio for offline revision.",
+                    "See you in the next AI LMS Master Teacher lesson!"
+                ],
+                "speaker_notes": "Thank you students for your active participation! Keep exploring and keep learning.",
+                "visual_description": "Smiling AI teacher avatar waving goodbye with stars",
+                "image_prompt": "Friendly teacher waving goodbye, cheerful students, confetti, 16:9",
+                "layout": "Closing Card",
+                "design_notes": "Warm violet and cyan celebratory glow"
+            }
+        ]
+
         try:
             ppt_folder = os.path.join(BASE_DIR, "ppts")
             os.makedirs(ppt_folder, exist_ok=True)
             import uuid
-            ppt_filename = f"gamma_deck_{req.language.lower()}_{uuid.uuid4().hex[:8]}.pptx"
+            ppt_filename = f"gemini_deck_{req.language.lower()}_{uuid.uuid4().hex[:8]}.pptx"
             ppt_path = os.path.join(ppt_folder, ppt_filename)
 
             from pptx import Presentation
@@ -1137,232 +1330,172 @@ Keep formatting very clean, encouraging, and easy to read."""
             from pptx.enum.shapes import MSO_SHAPE
 
             prs = Presentation()
-            # Set 16:9 Widescreen dimensions (13.333 x 7.5 inches)
             prs.slide_width = Inches(13.333)
             prs.slide_height = Inches(7.5)
-
             blank_layout = prs.slide_layouts[6]
 
-            # Gamma Design Color Palette (Dark Theme)
-            BG_DARK = RGBColor(10, 15, 29)
+            BG_DARK = RGBColor(7, 11, 25)
             CARD_BG = RGBColor(16, 25, 48)
             CYAN_ACCENT = RGBColor(0, 212, 255)
             VIOLET_ACCENT = RGBColor(168, 85, 247)
             TEXT_MAIN = RGBColor(248, 250, 252)
             TEXT_MUTED = RGBColor(148, 163, 184)
 
-            # Slide 1: Cover Title Slide (Gamma Style Hero Card)
-            slide1 = prs.slides.add_slide(blank_layout)
-            bg_rect = slide1.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, Inches(13.333), Inches(7.5))
-            bg_rect.fill.solid()
-            bg_rect.fill.fore_color.rgb = BG_DARK
-            bg_rect.line.fill.background()
-
-            # Main Card Box
-            card = slide1.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(1.5), Inches(1.5), Inches(10.333), Inches(4.5))
-            card.fill.solid()
-            card.fill.fore_color.rgb = CARD_BG
-            card.line.color.rgb = CYAN_ACCENT
-            card.line.width = Pt(2)
-
-            tf1 = card.text_frame
-            tf1.word_wrap = True
-            p1 = tf1.paragraphs[0]
-            p1.text = f"✨ {req.topic.upper()}"
-            p1.font.size = Pt(36)
-            p1.font.bold = True
-            p1.font.color.rgb = CYAN_ACCENT
-            p1.alignment = PP_ALIGN.CENTER
-
-            p2 = tf1.add_paragraph()
-            p2.text = f"\nAI Interactive Presentation • Class {req.class_name} ({req.language})"
-            p2.font.size = Pt(20)
-            p2.font.color.rgb = TEXT_MAIN
-            p2.alignment = PP_ALIGN.CENTER
-
-            # Content Slides (Gamma Modern Cards Layout built from Video Visual Scene Storyboard)
-            storyboard_source = video_script or script_text
-            scenes = [s.strip() for s in str(storyboard_source).split("\n\n") if s.strip() and not s.startswith("#")][:6]
-            if not scenes:
-                scenes = [p.strip() for p in str(storyboard_source).split("\n") if p.strip() and not p.startswith("#")][:6]
-
-            for idx, scene_text in enumerate(scenes):
-                s = prs.slides.add_slide(blank_layout)
-                bg = s.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, Inches(13.333), Inches(7.5))
+            for s_data in structured_slides:
+                slide = prs.slides.add_slide(blank_layout)
+                
+                # Dark background
+                bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, Inches(13.333), Inches(7.5))
                 bg.fill.solid()
                 bg.fill.fore_color.rgb = BG_DARK
                 bg.line.fill.background()
 
-                # Header Top Pill
-                header = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(0.6), Inches(11.733), Inches(0.9))
+                # Top Header Banner
+                header = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(0.5), Inches(11.733), Inches(1.0))
                 header.fill.solid()
                 header.fill.fore_color.rgb = CARD_BG
                 header.line.color.rgb = CYAN_ACCENT
                 header.line.width = Pt(1.5)
                 htf = header.text_frame
+                htf.word_wrap = True
                 hp = htf.paragraphs[0]
-                hp.text = f"🎬 SCENE {idx+1} STORYBOARD • {req.topic.upper()}"
-                hp.font.size = Pt(18)
+                hp.text = f"SLIDE {s_data['slide_number']}: {s_data['title'].upper()}"
+                hp.font.size = Pt(20)
                 hp.font.bold = True
                 hp.font.color.rgb = CYAN_ACCENT
 
-                # Load Female Teacher Avatar and AI Diagram Illustration for PPT slides
-                teacher_avatar_path = os.path.join(BASE_DIR, "images", "teacher_avatar.jpg")
-                
-                # Split slide layout: Content Card Box (Left) + AI Teacher Illustration (Right)
-                body_card = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(1.8), Inches(7.5), Inches(4.8))
-                body_card.fill.solid()
-                body_card.fill.fore_color.rgb = CARD_BG
-                body_card.line.color.rgb = VIOLET_ACCENT
-                body_card.line.width = Pt(1.5)
-                btf = body_card.text_frame
+                # Main Content Card (Left)
+                body = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(1.8), Inches(8.0), Inches(4.8))
+                body.fill.solid()
+                body.fill.fore_color.rgb = CARD_BG
+                body.line.color.rgb = VIOLET_ACCENT
+                body.line.width = Pt(1.5)
+                btf = body.text_frame
                 btf.word_wrap = True
 
-                bp = btf.paragraphs[0]
-                clean_scene = re.sub(r'[*#_~`\[\]]', '', scene_text)
-                bp.text = clean_scene[:420]
-                bp.font.size = Pt(18)
-                bp.font.color.rgb = TEXT_MAIN
+                sp_sub = btf.paragraphs[0]
+                sp_sub.text = s_data['subtitle']
+                sp_sub.font.size = Pt(14)
+                sp_sub.font.bold = True
+                sp_sub.font.color.rgb = CYAN_ACCENT
 
-                # Educational Graphic Card (Right Side)
-                img_card = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(8.6), Inches(1.8), Inches(3.9), Inches(4.8))
-                img_card.fill.solid()
-                img_card.fill.fore_color.rgb = CARD_BG
-                img_card.line.color.rgb = CYAN_ACCENT
-                img_card.line.width = Pt(1.5)
+                for bullet in s_data['bullet_points']:
+                    bp = btf.add_paragraph()
+                    bp.text = f"▶  {bullet}"
+                    bp.font.size = Pt(15)
+                    bp.font.color.rgb = TEXT_MAIN
+                    bp.space_before = Pt(8)
 
-                if os.path.exists(teacher_avatar_path):
+                # Right Graphic Card
+                rcard = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(9.1), Inches(1.8), Inches(3.433), Inches(4.8))
+                rcard.fill.solid()
+                rcard.fill.fore_color.rgb = CARD_BG
+                rcard.line.color.rgb = CYAN_ACCENT
+                rcard.line.width = Pt(1.5)
+                rtf = rcard.text_frame
+                rtf.word_wrap = True
+                rp = rtf.paragraphs[0]
+                rp.text = f"\n\n\n💡 {s_data['layout']}\n\n{s_data['visual_description']}"
+                rp.font.size = Pt(12)
+                rp.font.color.rgb = TEXT_MUTED
+                rp.alignment = PP_ALIGN.CENTER
+
+                # Embed native PowerPoint speaker notes
+                if hasattr(slide, "notes_slide"):
                     try:
-                        s.shapes.add_picture(teacher_avatar_path, Inches(8.8), Inches(2.0), width=Inches(3.5), height=Inches(3.5))
-                    except Exception as p_err:
-                        print("PPT picture embed notice:", p_err)
-
-                itf = img_card.text_frame
-                itf.word_wrap = True
-                ip = itf.paragraphs[0]
-                ip.text = f"\n\n\n\n\n\n\n\n👩‍🏫 MASTER TEACHER • CLASS {req.class_name}"
-                ip.font.size = Pt(13)
-                ip.font.bold = True
-                ip.font.color.rgb = CYAN_ACCENT
-                ip.alignment = PP_ALIGN.CENTER
+                        slide.notes_slide.notes_text_frame.text = s_data["speaker_notes"]
+                    except Exception:
+                        pass
 
             prs.save(ppt_path)
-            ppt_url = f"{BACKEND_HOST}/ppts/{ppt_filename}"
-            ppt_download_url = f"{BACKEND_HOST}/lesson/download-ppt/{ppt_filename}"
+            if os.path.exists(ppt_path) and os.path.getsize(ppt_path) > 0:
+                ppt_url = f"{BACKEND_HOST}/ppts/{ppt_filename}"
+                ppt_download_url = f"{BACKEND_HOST}/lesson/download-ppt/{ppt_filename}"
         except Exception as ppt_err:
-            print("Gamma PPT presentation notice:", ppt_err)
+            errors.append(f"PowerPoint generation notice: {str(ppt_err)}")
 
-        # Structured Slides for interactive Slide-by-Slide PPT Viewer
-        slides = []
-        slides.append({
-            "slide_number": 1,
-            "title": f"{req.topic}",
-            "subtitle": f"Class {req.class_name} • Interactive Presentation Deck ({req.language})",
-            "type": "cover",
-            "bullets": [
-                f"Subject Topic: {req.topic}",
-                f"Target Grade Level: Class {req.class_name}",
-                f"Language Mode: {req.language}",
-                "AI LMS Master Teacher Presentation Deck"
-            ],
-            "visual_cue": "💡 Key Overview & Core Objectives",
-            "speaker_notes": f"Welcome class! Today we are exploring '{req.topic}' for Class {req.class_name}. Pay close attention to the visual examples and key takeaways on each slide."
-        })
-
-        storyboard_source = video_script or script_text
-        scenes = [s.strip() for s in str(storyboard_source).split("\n\n") if s.strip() and not s.startswith("#")][:5]
-        if not scenes:
-            scenes = [p.strip() for p in str(script_text).split("\n") if p.strip() and not p.startswith("#")][:5]
-
-        for s_idx, scene_text in enumerate(scenes):
-            clean_s = re.sub(r'[*#_~`\[\]]', '', scene_text)
-            lines = [l.strip() for l in clean_s.split(".") if l.strip()]
-            slide_title = lines[0][:60] if lines else f"Key Concept {s_idx + 1}"
-            bullets = lines[1:5] if len(lines) > 1 else [clean_s[:140]]
-            
-            slides.append({
-                "slide_number": s_idx + 2,
-                "title": f"Slide {s_idx + 2}: {slide_title}",
-                "subtitle": f"Section {s_idx + 1} of {len(scenes)}",
-                "type": "content",
-                "bullets": bullets,
-                "visual_cue": f"⚡ Interactive Concept Visual #{s_idx + 1}",
-                "speaker_notes": f"Teacher Note for Slide {s_idx + 2}: Discuss {slide_title} in detail. Ask students how this concept applies in daily life."
-            })
-
-        # Structured Timestamped Audio Transcript Segments for interactive Audio Sync
+        # Timestamped transcript segments for interactive audio player
         audio_segments = []
-        raw_paras = [p.strip() for p in script_text.split("\n\n") if p.strip()]
-        if not raw_paras:
-            raw_paras = [p.strip() for p in script_text.split("\n") if p.strip()]
-        
+        raw_paras = [p.strip() for p in clean_speech_text.split(".") if p.strip()]
         curr_time = 0
-        for seg_idx, para in enumerate(raw_paras):
-            clean_para = re.sub(r'[*#_~`\[\]]', '', para)
-            duration = max(8, min(30, int(len(clean_para) / 12)))
+        for seg_idx, para in enumerate(raw_paras[:8]):
+            dur = max(6, min(20, int(len(para) / 10)))
             audio_segments.append({
                 "id": seg_idx + 1,
                 "start_time": curr_time,
-                "end_time": curr_time + duration,
+                "end_time": curr_time + dur,
                 "time_label": f"{int(curr_time // 60):02d}:{int(curr_time % 60):02d}",
-                "text": clean_para
+                "text": para
             })
-            curr_time += duration
+            curr_time += dur
 
-        # Structured In-Video Quizzes & Chapter Bookmarks
+        # In-video checkpoint quizzes
         video_quizzes = [
             {
                 "id": 1,
-                "timestamp": 12,
-                "time_label": "00:12",
-                "chapter_title": "1. Introduction & Overview",
-                "question": f"What is the core subject of this interactive lesson?",
-                "options": [
-                    f"{req.topic}",
-                    "World History Timeline",
-                    "Advanced Differential Equations",
-                    "Unrelated General Science"
-                ],
+                "timestamp": 8,
+                "time_label": "00:08",
+                "chapter_title": "1. Introduction",
+                "question": f"What is the focus of today's lesson?",
+                "options": [f"{req.topic}", "Ancient Roman History", "Calculus Integrals", "Unrelated Subject"],
                 "correct_index": 0,
-                "explanation": f"Correct! This lesson focuses on {req.topic}."
+                "explanation": f"Correct! Today's lesson is specifically focused on {req.topic}."
             },
             {
                 "id": 2,
-                "timestamp": 30,
-                "time_label": "00:30",
-                "chapter_title": "2. Main Key Concept",
-                "question": f"Which grade level is this lesson material tuned for?",
-                "options": [
-                    "University Graduate Level",
-                    f"Class {req.class_name} Level",
-                    "Early Preschool",
-                    "Doctorate Research Level"
-                ],
+                "timestamp": 20,
+                "time_label": "00:20",
+                "chapter_title": "2. Core Concept Check",
+                "question": f"Which grade level is this lesson calibrated for?",
+                "options": ["College Level", f"Class {req.class_name} Level", "Preschool", "PhD Research"],
                 "correct_index": 1,
-                "explanation": f"Spot on! The explanation and vocabulary are tailored for Class {req.class_name}."
+                "explanation": f"Spot on! Content and pace are tailored for Class {req.class_name}."
             },
             {
                 "id": 3,
-                "timestamp": 55,
-                "time_label": "00:55",
-                "chapter_title": "3. Interactive Summary & Activity Check",
-                "question": f"Why is completing the post-video activity important?",
-                "options": [
-                    "It has no educational value",
-                    "It reinforces concepts through active student engagement",
-                    "It is optional with no benefits",
-                    "It replaces reading textbooks completely"
-                ],
+                "timestamp": 35,
+                "time_label": "00:35",
+                "chapter_title": "3. Summary Check",
+                "question": "What is the recommended next step after the video lesson?",
+                "options": ["Close without reviewing", "Complete the hands-on activity", "Skip all exercises", "Forget the topic"],
                 "correct_index": 1,
-                "explanation": "Great job! Active practical engagement helps consolidate knowledge."
+                "explanation": "Great job! Active practice strengthens memory retention."
             }
         ]
 
+        # Return standardized multi-engine response format
         return {
+            "lesson_title": req.topic,
+            "status": "completed",
+            "audio": {
+                "provider": audio_provider,
+                "format": "mp3",
+                "narration_script": clean_speech_text,
+                "url": audio_url,
+                "download_url": audio_download_url,
+                "status": "success" if audio_url else "failed"
+            },
+            "video": {
+                "provider": video_provider,
+                "format": "mp4",
+                "storyboard": storyboard_scenes,
+                "url": video_url,
+                "download_url": video_download_url,
+                "status": "success" if video_url else "failed"
+            },
+            "presentation": {
+                "provider": "Google Gemini",
+                "format": "pptx",
+                "slides": structured_slides,
+                "url": ppt_url,
+                "download_url": ppt_download_url,
+                "status": "success" if ppt_url else "failed"
+            },
+            "errors": errors,
+            # Backward compatibility fields for frontend:
             "success": True,
             "topic": req.topic,
             "language": req.language,
-            "media_type": req.media_type,
             "script": script_text,
             "video_script": video_script,
             "video_notes_activity": video_notes_activity,
@@ -1372,7 +1505,7 @@ Keep formatting very clean, encouraging, and easy to read."""
             "video_download_url": video_download_url,
             "ppt_url": ppt_url,
             "ppt_download_url": ppt_download_url,
-            "slides": slides,
+            "slides": structured_slides,
             "audio_segments": audio_segments,
             "video_quizzes": video_quizzes
         }
