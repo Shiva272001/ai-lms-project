@@ -1015,9 +1015,16 @@ Keep formatting very clean, encouraging, and easy to read."""
 
                                     v_clip = VideoFileClip(raw_vid_path)
                                     a_clip = AudioFileClip(audio_path)
-                                    final_clip = v_clip.set_audio(a_clip)
-                                    final_clip = final_clip.set_duration(a_clip.duration)
-                                    final_clip.write_videofile(video_path, fps=12, codec="libx264", audio_codec="aac", preset="ultrafast")
+                                    if hasattr(v_clip, "with_audio"):
+                                        final_clip = v_clip.with_audio(a_clip)
+                                        final_clip = final_clip.with_duration(a_clip.duration)
+                                    else:
+                                        final_clip = v_clip.set_audio(a_clip)
+                                        final_clip = final_clip.set_duration(a_clip.duration)
+                                    try:
+                                        final_clip.write_videofile(video_path, fps=12, codec="libx264", audio_codec="aac", preset="ultrafast")
+                                    except Exception:
+                                        final_clip.write_videofile(video_path, fps=12, preset="ultrafast")
                                 except Exception as sync_err:
                                     print("MoviePy audio overlay notice:", sync_err)
                                     with open(video_path, "wb") as f_out:
@@ -1091,12 +1098,23 @@ Keep formatting very clean, encouraging, and easy to read."""
                 if audio_path and os.path.exists(audio_path):
                     try:
                         aud_clip = AudioFileClip(audio_path)
-                        clip = clip.set_duration(aud_clip.duration)
-                        clip = clip.set_audio(aud_clip)
-                    except Exception:
-                        pass
+                        if hasattr(clip, "with_duration"):
+                            clip = clip.with_duration(aud_clip.duration)
+                        elif hasattr(clip, "set_duration"):
+                            clip = clip.set_duration(aud_clip.duration)
 
-                clip.write_videofile(video_path, fps=5, codec="libx264", audio_codec="aac", preset="ultrafast")
+                        if hasattr(clip, "with_audio"):
+                            clip = clip.with_audio(aud_clip)
+                        elif hasattr(clip, "set_audio"):
+                            clip = clip.set_audio(aud_clip)
+                    except Exception as a_sync_err:
+                        print("Audio-video sync notice:", a_sync_err)
+
+                try:
+                    clip.write_videofile(video_path, fps=5, codec="libx264", audio_codec="aac", preset="ultrafast")
+                except Exception:
+                    clip.write_videofile(video_path, fps=5, preset="ultrafast")
+
                 video_url = f"{BACKEND_HOST}/videos/{video_filename}"
                 video_download_url = f"{BACKEND_HOST}/lesson/download-video/{video_filename}"
             except Exception as fallback_err:
@@ -1234,6 +1252,112 @@ Keep formatting very clean, encouraging, and easy to read."""
         except Exception as ppt_err:
             print("Gamma PPT presentation notice:", ppt_err)
 
+        # Structured Slides for interactive Slide-by-Slide PPT Viewer
+        slides = []
+        slides.append({
+            "slide_number": 1,
+            "title": f"{req.topic}",
+            "subtitle": f"Class {req.class_name} • Interactive Presentation Deck ({req.language})",
+            "type": "cover",
+            "bullets": [
+                f"Subject Topic: {req.topic}",
+                f"Target Grade Level: Class {req.class_name}",
+                f"Language Mode: {req.language}",
+                "AI LMS Master Teacher Presentation Deck"
+            ],
+            "visual_cue": "💡 Key Overview & Core Objectives",
+            "speaker_notes": f"Welcome class! Today we are exploring '{req.topic}' for Class {req.class_name}. Pay close attention to the visual examples and key takeaways on each slide."
+        })
+
+        storyboard_source = video_script or script_text
+        scenes = [s.strip() for s in str(storyboard_source).split("\n\n") if s.strip() and not s.startswith("#")][:5]
+        if not scenes:
+            scenes = [p.strip() for p in str(script_text).split("\n") if p.strip() and not p.startswith("#")][:5]
+
+        for s_idx, scene_text in enumerate(scenes):
+            clean_s = re.sub(r'[*#_~`\[\]]', '', scene_text)
+            lines = [l.strip() for l in clean_s.split(".") if l.strip()]
+            slide_title = lines[0][:60] if lines else f"Key Concept {s_idx + 1}"
+            bullets = lines[1:5] if len(lines) > 1 else [clean_s[:140]]
+            
+            slides.append({
+                "slide_number": s_idx + 2,
+                "title": f"Slide {s_idx + 2}: {slide_title}",
+                "subtitle": f"Section {s_idx + 1} of {len(scenes)}",
+                "type": "content",
+                "bullets": bullets,
+                "visual_cue": f"⚡ Interactive Concept Visual #{s_idx + 1}",
+                "speaker_notes": f"Teacher Note for Slide {s_idx + 2}: Discuss {slide_title} in detail. Ask students how this concept applies in daily life."
+            })
+
+        # Structured Timestamped Audio Transcript Segments for interactive Audio Sync
+        audio_segments = []
+        raw_paras = [p.strip() for p in script_text.split("\n\n") if p.strip()]
+        if not raw_paras:
+            raw_paras = [p.strip() for p in script_text.split("\n") if p.strip()]
+        
+        curr_time = 0
+        for seg_idx, para in enumerate(raw_paras):
+            clean_para = re.sub(r'[*#_~`\[\]]', '', para)
+            duration = max(8, min(30, int(len(clean_para) / 12)))
+            audio_segments.append({
+                "id": seg_idx + 1,
+                "start_time": curr_time,
+                "end_time": curr_time + duration,
+                "time_label": f"{int(curr_time // 60):02d}:{int(curr_time % 60):02d}",
+                "text": clean_para
+            })
+            curr_time += duration
+
+        # Structured In-Video Quizzes & Chapter Bookmarks
+        video_quizzes = [
+            {
+                "id": 1,
+                "timestamp": 12,
+                "time_label": "00:12",
+                "chapter_title": "1. Introduction & Overview",
+                "question": f"What is the core subject of this interactive lesson?",
+                "options": [
+                    f"{req.topic}",
+                    "World History Timeline",
+                    "Advanced Differential Equations",
+                    "Unrelated General Science"
+                ],
+                "correct_index": 0,
+                "explanation": f"Correct! This lesson focuses on {req.topic}."
+            },
+            {
+                "id": 2,
+                "timestamp": 30,
+                "time_label": "00:30",
+                "chapter_title": "2. Main Key Concept",
+                "question": f"Which grade level is this lesson material tuned for?",
+                "options": [
+                    "University Graduate Level",
+                    f"Class {req.class_name} Level",
+                    "Early Preschool",
+                    "Doctorate Research Level"
+                ],
+                "correct_index": 1,
+                "explanation": f"Spot on! The explanation and vocabulary are tailored for Class {req.class_name}."
+            },
+            {
+                "id": 3,
+                "timestamp": 55,
+                "time_label": "00:55",
+                "chapter_title": "3. Interactive Summary & Activity Check",
+                "question": f"Why is completing the post-video activity important?",
+                "options": [
+                    "It has no educational value",
+                    "It reinforces concepts through active student engagement",
+                    "It is optional with no benefits",
+                    "It replaces reading textbooks completely"
+                ],
+                "correct_index": 1,
+                "explanation": "Great job! Active practical engagement helps consolidate knowledge."
+            }
+        ]
+
         return {
             "success": True,
             "topic": req.topic,
@@ -1247,7 +1371,10 @@ Keep formatting very clean, encouraging, and easy to read."""
             "video_url": video_url,
             "video_download_url": video_download_url,
             "ppt_url": ppt_url,
-            "ppt_download_url": ppt_download_url
+            "ppt_download_url": ppt_download_url,
+            "slides": slides,
+            "audio_segments": audio_segments,
+            "video_quizzes": video_quizzes
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -1275,3 +1402,23 @@ def download_ppt(filename: str):
         media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
         headers={"Content-Disposition": f'attachment; filename="AI_LMS_Presentation_{filename}"'}
     )
+
+
+@router.get("/download-audio/{filename}")
+def download_audio(filename: str):
+    audio_path = os.path.join(BASE_DIR, "audios", filename)
+    if not os.path.exists(audio_path):
+        raise HTTPException(status_code=404, detail="Audio file not found")
+    return FileResponse(
+        audio_path,
+        media_type="audio/mpeg",
+        headers={"Content-Disposition": f'attachment; filename="AI_LMS_Audio_{filename}"'}
+    )
+
+
+@router.get("/audio/{filename}")
+def stream_audio(filename: str):
+    audio_path = os.path.join(BASE_DIR, "audios", filename)
+    if not os.path.exists(audio_path):
+        raise HTTPException(status_code=404, detail="Audio file not found")
+    return FileResponse(audio_path, media_type="audio/mpeg")

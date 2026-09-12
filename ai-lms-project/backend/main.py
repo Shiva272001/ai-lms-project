@@ -70,8 +70,28 @@ VIDEO_FOLDER = os.path.join(
     "videos"
 )
 
+AUDIO_FOLDER = os.path.join(
+    BASE_DIR,
+    "audios"
+)
+
+PPT_FOLDER = os.path.join(
+    BASE_DIR,
+    "ppts"
+)
+
 os.makedirs(
     VIDEO_FOLDER,
+    exist_ok=True
+)
+
+os.makedirs(
+    AUDIO_FOLDER,
+    exist_ok=True
+)
+
+os.makedirs(
+    PPT_FOLDER,
     exist_ok=True
 )
 
@@ -89,6 +109,22 @@ app.mount(
         directory=VIDEO_FOLDER
     ),
     name="videos",
+)
+
+app.mount(
+    "/audios",
+    StaticFiles(
+        directory=AUDIO_FOLDER
+    ),
+    name="audios",
+)
+
+app.mount(
+    "/ppts",
+    StaticFiles(
+        directory=PPT_FOLDER
+    ),
+    name="ppts",
 )
 
 
