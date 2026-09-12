@@ -44,6 +44,8 @@ BASE_DIR = os.path.dirname(
     )
 )
 
+BACKEND_HOST = os.getenv("BACKEND_HOST", "http://127.0.0.1:8000").rstrip("/")
+
 IMAGE_FOLDER = os.path.join(
     BASE_DIR,
     "images"
@@ -601,7 +603,7 @@ def generate_lesson(
             "image_url": lesson.image_url,
 
             "image_full_url": (
-                "http://127.0.0.1:8000"
+                f"{BACKEND_HOST}"
                 + lesson.image_url
             )
             if lesson.image_url
@@ -614,7 +616,7 @@ def generate_lesson(
             "pdf_url": pdf_url,
 
             "pdf_download_url": (
-                "http://127.0.0.1:8000"
+                f"{BACKEND_HOST}"
                 + pdf_url
             )
             if pdf_url
@@ -785,7 +787,7 @@ def generate_audio_script(req: NotebookLMScriptRequest):
             lang_code = 'hi' if req.language.lower() == 'hinglish' else 'en'
             tts = gTTS(text=clean_audio_text, lang=lang_code, slow=False)
             tts.save(audio_path)
-            audio_url = f"http://127.0.0.1:8000/lesson/audio/{audio_filename}"
+            audio_url = f"{BACKEND_HOST}/lesson/audio/{audio_filename}"
         except Exception as tts_err:
             print("gTTS generation notice:", tts_err)
 
@@ -964,8 +966,8 @@ Keep formatting very clean, encouraging, and easy to read."""
                 tts = gTTS(text=clean_text, lang=gtts_lang, slow=False)
                 tts.save(audio_path)
 
-            audio_url = f"http://127.0.0.1:8000/lesson/audio/{audio_filename}"
-            audio_download_url = f"http://127.0.0.1:8000/lesson/download-audio/{audio_filename}"
+            audio_url = f"{BACKEND_HOST}/lesson/audio/{audio_filename}"
+            audio_download_url = f"{BACKEND_HOST}/lesson/download-audio/{audio_filename}"
         except Exception as tts_err:
             print("Studio TTS warning:", tts_err)
 
@@ -1024,8 +1026,8 @@ Keep formatting very clean, encouraging, and easy to read."""
                                 with open(video_path, "wb") as f_out:
                                     f_out.write(hf_res.content)
 
-                            video_url = f"http://127.0.0.1:8000/videos/{video_filename}"
-                            video_download_url = f"http://127.0.0.1:8000/lesson/download-video/{video_filename}"
+                            video_url = f"{BACKEND_HOST}/videos/{video_filename}"
+                            video_download_url = f"{BACKEND_HOST}/lesson/download-video/{video_filename}"
                             break
                     except Exception as m_err:
                         print(f"HF model attempt notice ({hf_url}):", m_err)
@@ -1095,8 +1097,8 @@ Keep formatting very clean, encouraging, and easy to read."""
                         pass
 
                 clip.write_videofile(video_path, fps=5, codec="libx264", audio_codec="aac", preset="ultrafast")
-                video_url = f"http://127.0.0.1:8000/videos/{video_filename}"
-                video_download_url = f"http://127.0.0.1:8000/lesson/download-video/{video_filename}"
+                video_url = f"{BACKEND_HOST}/videos/{video_filename}"
+                video_download_url = f"{BACKEND_HOST}/lesson/download-video/{video_filename}"
             except Exception as fallback_err:
                 print("Fallback MP4 render notice:", fallback_err)
 
@@ -1227,8 +1229,8 @@ Keep formatting very clean, encouraging, and easy to read."""
                 ip.alignment = PP_ALIGN.CENTER
 
             prs.save(ppt_path)
-            ppt_url = f"http://127.0.0.1:8000/ppts/{ppt_filename}"
-            ppt_download_url = f"http://127.0.0.1:8000/lesson/download-ppt/{ppt_filename}"
+            ppt_url = f"{BACKEND_HOST}/ppts/{ppt_filename}"
+            ppt_download_url = f"{BACKEND_HOST}/lesson/download-ppt/{ppt_filename}"
         except Exception as ppt_err:
             print("Gamma PPT presentation notice:", ppt_err)
 

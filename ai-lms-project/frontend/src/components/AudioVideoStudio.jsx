@@ -70,6 +70,20 @@ function AudioVideoStudio() {
   const [pptUrl, setPptUrl] = useState("");
   const [pptDownloadUrl, setPptDownloadUrl] = useState("");
 
+  const resolveUrl = (rawUrl) => {
+    if (!rawUrl) return "";
+    let cleanUrl = rawUrl;
+    if (cleanUrl.includes("127.0.0.1:8000") || cleanUrl.includes("localhost:8000")) {
+      const idx = cleanUrl.search(/\/(audios|videos|ppts|images|lesson|converter)\//);
+      if (idx !== -1) cleanUrl = cleanUrl.substring(idx);
+    }
+    if (cleanUrl.startsWith("/")) {
+      const base = (api.defaults.baseURL || "").replace(/\/+$/, "");
+      return `${base}${cleanUrl}`;
+    }
+    return cleanUrl;
+  };
+
   const handleGenerateMedia = async () => {
     const finalSource = extractedContent || textInput;
     if (!finalSource.trim() && !topicTitle.trim()) {
@@ -103,22 +117,22 @@ function AudioVideoStudio() {
         setVideoScript(response.data.video_script || "");
         setVideoNotesActivity(response.data.video_notes_activity || "");
         if (response.data.audio_url) {
-          setAudioUrl(response.data.audio_url);
+          setAudioUrl(resolveUrl(response.data.audio_url));
         }
         if (response.data.audio_download_url) {
-          setAudioDownloadUrl(response.data.audio_download_url);
+          setAudioDownloadUrl(resolveUrl(response.data.audio_download_url));
         }
         if (response.data.video_url) {
-          setVideoUrl(response.data.video_url);
+          setVideoUrl(resolveUrl(response.data.video_url));
         }
         if (response.data.video_download_url) {
-          setVideoDownloadUrl(response.data.video_download_url);
+          setVideoDownloadUrl(resolveUrl(response.data.video_download_url));
         }
         if (response.data.ppt_url) {
-          setPptUrl(response.data.ppt_url);
+          setPptUrl(resolveUrl(response.data.ppt_url));
         }
         if (response.data.ppt_download_url) {
-          setPptDownloadUrl(response.data.ppt_download_url);
+          setPptDownloadUrl(resolveUrl(response.data.ppt_download_url));
         }
       } else {
         setErrorMessage(response.data.error || "Media generation failed.");

@@ -16,6 +16,20 @@ function HomeworkConverter() {
     }
   };
 
+  const resolveUrl = (rawUrl) => {
+    if (!rawUrl) return "";
+    let cleanUrl = rawUrl;
+    if (cleanUrl.includes("127.0.0.1:8000") || cleanUrl.includes("localhost:8000")) {
+      const idx = cleanUrl.search(/\/(audios|videos|ppts|images|lesson|converter)\//);
+      if (idx !== -1) cleanUrl = cleanUrl.substring(idx);
+    }
+    if (cleanUrl.startsWith("/")) {
+      const base = (api.defaults.baseURL || "").replace(/\/+$/, "");
+      return `${base}${cleanUrl}`;
+    }
+    return cleanUrl;
+  };
+
   const handleConvert = async () => {
     if (!file) {
       alert("Please upload a handwritten note image or PDF document first.");
@@ -41,7 +55,7 @@ function HomeworkConverter() {
         setRawText(response.data.extracted_raw_text);
         setStructuredLesson(response.data.digital_structured_lesson);
         if (response.data.pdf_download_url) {
-          setPdfDownloadUrl(response.data.pdf_download_url);
+          setPdfDownloadUrl(resolveUrl(response.data.pdf_download_url));
         }
       } else {
         setErrorMsg(response.data.error || "Failed to process document.");

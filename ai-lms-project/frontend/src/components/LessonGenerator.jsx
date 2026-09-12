@@ -27,6 +27,24 @@ function LessonGenerator() {
     "Human Digestive System"
   ];
 
+  const resolveUrl = (rawUrl) => {
+    if (!rawUrl) return "";
+    let cleanUrl = rawUrl;
+    if (cleanUrl.includes("127.0.0.1:8000") || cleanUrl.includes("localhost:8000")) {
+      const imgIdx = cleanUrl.indexOf("/images/");
+      const pdfIdx = cleanUrl.indexOf("/lesson/");
+      const audioIdx = cleanUrl.indexOf("/audios/");
+      if (imgIdx !== -1) cleanUrl = cleanUrl.substring(imgIdx);
+      else if (pdfIdx !== -1) cleanUrl = cleanUrl.substring(pdfIdx);
+      else if (audioIdx !== -1) cleanUrl = cleanUrl.substring(audioIdx);
+    }
+    if (cleanUrl.startsWith("/")) {
+      const base = (api.defaults.baseURL || "").replace(/\/+$/, "");
+      return `${base}${cleanUrl}`;
+    }
+    return cleanUrl;
+  };
+
   const handleGenerate = async () => {
     if (!topic.trim()) {
       alert("Please enter a topic.");
@@ -48,16 +66,14 @@ function LessonGenerator() {
 
       setLesson(response.data.lesson || "No lesson generated.");
 
-      if (response.data.image_full_url) {
-        setImageUrl(response.data.image_full_url);
-      } else if (response.data.image_url) {
-        setImageUrl(`${api.defaults.baseURL}${response.data.image_url}`);
+      const rawImg = response.data.image_full_url || response.data.image_url;
+      if (rawImg) {
+        setImageUrl(resolveUrl(rawImg));
       }
 
-      if (response.data.pdf_download_url) {
-        setPdfUrl(response.data.pdf_download_url);
-      } else if (response.data.pdf_url) {
-        setPdfUrl(`${api.defaults.baseURL}${response.data.pdf_url}`);
+      const rawPdf = response.data.pdf_download_url || response.data.pdf_url;
+      if (rawPdf) {
+        setPdfUrl(resolveUrl(rawPdf));
       }
     } catch (error) {
       console.error("Lesson generation error:", error);
@@ -97,10 +113,10 @@ function LessonGenerator() {
         setAudioScript(response.data.script);
       }
       if (response.data.audio_url) {
-        setAudioUrl(response.data.audio_url);
+        setAudioUrl(resolveUrl(response.data.audio_url));
       }
       if (response.data.audio_download_url) {
-        setAudioDownloadUrl(response.data.audio_download_url);
+        setAudioDownloadUrl(resolveUrl(response.data.audio_download_url));
       }
     } catch (error) {
       console.error("Audio script generation error:", error);
@@ -311,7 +327,7 @@ function LessonGenerator() {
               🖼️ Visual Diagram
             </h3>
 
-            {imageUrl ? (
+            {imageUrl && !imageError ? (
               <div style={{ textAlign: "center" }}>
                 <a href={imageUrl} target="_blank" rel="noopener noreferrer">
                   <img
@@ -335,7 +351,7 @@ function LessonGenerator() {
               </div>
             ) : (
               <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-muted)", background: "rgba(0,0,0,0.3)", borderRadius: "var(--radius-sm)" }}>
-                No diagram preview available for this topic.
+                {imageError ? `⚠️ ${imageError}` : "No diagram preview available for this topic."}
               </div>
             )}
           </div>

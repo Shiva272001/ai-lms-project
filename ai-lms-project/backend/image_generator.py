@@ -143,20 +143,24 @@ def generate_image(topic, class_name):
         raise Exception(f"OpenAI Image Generation failed: {res.text}")
 
     # 3. Pollinations / Free Provider Fallback
-    headers = {}
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
+    try:
+        url = f"https://image.pollinations.ai/prompt/{quote(prompt)}?width=800&height=600&nologo=true"
+        pol_key = os.getenv("POLLINATIONS_API_KEY")
+        headers = {}
+        if pol_key and pol_key.startswith("pk_"):
+            headers["Authorization"] = f"Bearer {pol_key}"
+            url += f"&key={quote(pol_key)}"
 
-    url = f"https://image.pollinations.ai/prompt/{quote(prompt)}"
-    if api_key:
-        url += f"?key={quote(api_key)}"
+        response = requests.get(url, headers=headers, timeout=60)
 
-    response = requests.get(url, headers=headers, timeout=120)
+        if response.status_code == 200 and len(response.content) > 1000:
+            with open(filepath, "wb") as f:
+                f.write(response.content)
+            print("Image saved via Pollinations:", filepath)
+            return filepath
+        else:
+            print(f"Pollinations response status: {response.status_code}, len: {len(response.content)}")
+    except Exception as pol_err:
+        print("Pollinations fallback exception:", pol_err)
 
-    if response.status_code == 200:
-        with open(filepath, "wb") as f:
-            f.write(response.content)
-        print("Image saved:", filepath)
-        return filepath
-
-    raise Exception(f"Image generation failed with status {response.status_code}: {response.text}")
+    raise Exception("Image generation failed across all providers.")

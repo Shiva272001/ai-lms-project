@@ -18,6 +18,7 @@ router = APIRouter(
 )
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BACKEND_HOST = os.getenv("BACKEND_HOST", "http://127.0.0.1:8000").rstrip("/")
 CONVERTED_PDF_FOLDER = os.path.join(BASE_DIR, "converted_pdfs")
 os.makedirs(CONVERTED_PDF_FOLDER, exist_ok=True)
 
@@ -144,7 +145,7 @@ Provide output with:
                 story.append(Spacer(1, 6))
                 
         doc.build(story)
-        pdf_download_url = f"http://127.0.0.1:8000/converter/download-pdf/{pdf_filename}"
+        pdf_download_url = f"{BACKEND_HOST}/converter/download-pdf/{pdf_filename}"
     except Exception as pdf_gen_err:
         print("PDF Gen error:", pdf_gen_err)
         pdf_download_url = None
