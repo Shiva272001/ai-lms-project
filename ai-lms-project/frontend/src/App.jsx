@@ -13,7 +13,7 @@
  */
 
 import React from "react";
-import { BrowserRouter, Routes, Route, NavLink, useNavigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, NavLink, Link, useNavigate, useLocation } from "react-router-dom";
 
 import LessonGenerator from "./components/LessonGenerator";
 import AudioVideoStudio from "./components/AudioVideoStudio";
@@ -25,7 +25,6 @@ import LearningPath from "./components/LearningPath";
 import ProgressChart from "./components/ProgressChart";
 import StudyPlanner from "./components/StudyPlanner";
 import {
-  ShivaNavbarBrand,
   ShivaProfessionalFooter,
   DeveloperProfileCard,
   DeveloperBadge
@@ -299,8 +298,15 @@ function AppContent() {
       {/* HUD Navigation Header */}
       <header className="navbar">
         <div className="nav-container">
-          {/* Shiva AI Developer Modern Text Logo & Tagline */}
-          <ShivaNavbarBrand />
+          {/* Exact Brand Logo: AI LMS */}
+          <Link to="/" className="brand-logo">
+            <div className="diamond-badge">
+              <div className="diamond-outer"></div>
+              <div className="diamond-inner"></div>
+              <div className="diamond-core"></div>
+            </div>
+            <div className="brand-title">AI <span>LMS</span></div>
+          </Link>
 
           <nav>
             <ul className="nav-links">
