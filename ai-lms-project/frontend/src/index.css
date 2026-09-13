@@ -720,24 +720,257 @@ pre {
   animation: pulse 1.5s infinite;
 }
 
-/* Footer */
+/* Footer & Shiva Singh Developer Branding */
 .app-footer {
   border-top: 1px solid var(--border-cyan);
   background: rgba(5, 7, 15, 0.95);
-  padding: 24px 0;
-  text-align: center;
+  padding: 28px 0;
   color: var(--text-muted);
   font-size: 12px;
   font-family: var(--font-heading);
   letter-spacing: 1px;
 }
 
+.developer-hud-badge {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.developer-hud-badge:hover {
+  border-color: var(--accent-cyan) !important;
+  box-shadow: 0 0 25px rgba(0, 212, 255, 0.35) !important;
+  transform: translateY(-1px);
+}
+
+.developer-hud-badge:hover .developer-logo-svg {
+  transform: rotate(6deg) scale(1.08);
+  filter: drop-shadow(0 0 14px rgba(0, 212, 255, 0.9)) !important;
+}
+
+.developer-module-watermark {
+  transition: opacity 0.2s ease;
+}
+
+.developer-module-watermark:hover {
+  opacity: 1;
+}
+
+/* =========================================================
+   SHIVA SINGH AI DEVELOPER BRANDING STYLES
+   ========================================================= */
+
+.shiva-navbar-brand-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 20px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.shiva-navbar-brand-link:hover {
+  background: rgba(0, 212, 255, 0.06);
+  transform: translateY(-1px);
+}
+
+.shiva-text-logo-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shiva-neural-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.4s ease;
+}
+
+.shiva-navbar-brand-link:hover .shiva-neural-icon {
+  transform: rotate(15deg) scale(1.1);
+}
+
+.shiva-navbar-tagline-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 212, 255, 0.05);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  padding: 3px 10px;
+  border-radius: 14px;
+  backdrop-filter: blur(4px);
+}
+
+.shiva-tagline-name {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.shiva-tagline-separator {
+  color: rgba(0, 212, 255, 0.4);
+  font-size: 11px;
+}
+
+.shiva-tagline-title {
+  font-family: var(--font-heading);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Professional Footer Styles */
+.shiva-professional-footer {
+  width: 100%;
+}
+
+.shiva-footer-inner {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.shiva-footer-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.shiva-footer-brand-block {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.shiva-footer-developer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.shiva-dev-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shiva-dev-highlight {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.shiva-dev-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.shiva-badge-dot {
+  color: rgba(0, 212, 255, 0.4);
+}
+
+.shiva-footer-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.shiva-telemetry-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid var(--border-cyan);
+  padding: 4px 12px;
+  border-radius: 16px;
+  color: var(--accent-cyan);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  font-family: var(--font-heading);
+}
+
+.shiva-status-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #34d399;
+  box-shadow: 0 0 8px #34d399;
+}
+
+.shiva-cert-tags {
+  display: flex;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-family: var(--font-heading);
+  letter-spacing: 0.8px;
+}
+
+.shiva-footer-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.25), rgba(168, 85, 247, 0.25), transparent);
+}
+
+.shiva-footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-heading);
+}
+
+.shiva-copyright-text {
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+
+.shiva-footer-caption {
+  letter-spacing: 0.8px;
+  opacity: 0.8;
+}
+
 @media (max-width: 768px) {
   .nav-container {
     flex-direction: column;
     height: auto;
-    padding: 12px 0;
+    padding: 12px 10px;
     gap: 12px;
+  }
+  .shiva-navbar-brand-link {
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+  }
+  .shiva-navbar-tagline-container {
+    font-size: 10px;
+    padding: 2px 8px;
   }
   .main-content {
     padding: 16px 12px 40px;
@@ -745,4 +978,26 @@ pre {
   .card {
     padding: 20px;
   }
+  .shiva-footer-top {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .shiva-footer-brand-block {
+    flex-direction: column;
+    text-align: center;
+  }
+  .shiva-footer-developer-info {
+    text-align: center;
+    align-items: center;
+  }
+  .shiva-footer-badges {
+    align-items: center;
+  }
+  .shiva-footer-bottom {
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+  }
 }
+

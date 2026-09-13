@@ -1,3 +1,17 @@
+/**
+ * =========================================================================================
+ *  COPYRIGHT & INTELLECTUAL PROPERTY NOTICE
+ * =========================================================================================
+ *  © 2026 Shiva Singh. All Rights Reserved.
+ *  Developer & Architect: Shiva Singh (AI Developer)
+ *  Project: AI LMS - Next-Generation AI Intelligence Platform
+ *  Module: ProgressChart.jsx (Student Learning Analytics & Telemetry Engine)
+ * 
+ *  Unauthorized copying, reproduction, or distribution of this code without express written
+ *  permission from Shiva Singh is strictly prohibited.
+ * =========================================================================================
+ */
+
 import React, { useState, useEffect } from "react";
 import api from "../api";
 import jsPDF from "jspdf";
@@ -10,6 +24,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { DeveloperWatermark } from "./DeveloperAttribution";
 
 function ProgressChart() {
   const [studentId, setStudentId] = useState("1");
@@ -270,6 +285,9 @@ function ProgressChart() {
           </p>
         </div>
       )}
+
+      {/* Shiva Singh AI Developer Attribution & Copyright Watermark */}
+      <DeveloperWatermark moduleName="Progress Analytics" />
     </div>
   );
 }

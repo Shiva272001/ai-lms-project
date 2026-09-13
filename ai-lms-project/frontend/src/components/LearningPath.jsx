@@ -1,5 +1,20 @@
+/**
+ * =========================================================================================
+ *  COPYRIGHT & INTELLECTUAL PROPERTY NOTICE
+ * =========================================================================================
+ *  © 2026 Shiva Singh. All Rights Reserved.
+ *  Developer & Architect: Shiva Singh (AI Developer)
+ *  Project: AI LMS - Next-Generation AI Intelligence Platform
+ *  Module: LearningPath.jsx (Adaptive 14-Day Study Roadmap Generator)
+ * 
+ *  Unauthorized copying, reproduction, or distribution of this code without express written
+ *  permission from Shiva Singh is strictly prohibited.
+ * =========================================================================================
+ */
+
 import React, { useState } from "react";
 import api from "../api";
+import { DeveloperWatermark } from "./DeveloperAttribution";
 
 function LearningPath() {
   const [studentName, setStudentName] = useState("");
@@ -198,6 +213,9 @@ function LearningPath() {
           </div>
         </div>
       )}
+
+      {/* Shiva Singh AI Developer Attribution & Copyright Watermark */}
+      <DeveloperWatermark moduleName="Learning Path Roadmap" />
     </div>
   );
 }

@@ -1,5 +1,20 @@
+/**
+ * =========================================================================================
+ *  COPYRIGHT & INTELLECTUAL PROPERTY NOTICE
+ * =========================================================================================
+ *  © 2026 Shiva Singh. All Rights Reserved.
+ *  Developer & Architect: Shiva Singh (AI Developer)
+ *  Project: AI LMS - Next-Generation AI Intelligence Platform
+ *  Module: HomeworkConverter.jsx (OCR Homework & PDF Transformation Engine)
+ * 
+ *  Unauthorized copying, reproduction, or distribution of this code without express written
+ *  permission from Shiva Singh is strictly prohibited.
+ * =========================================================================================
+ */
+
 import React, { useState } from "react";
 import api from "../api";
+import { DeveloperWatermark } from "./DeveloperAttribution";
 
 function HomeworkConverter() {
   const [file, setFile] = useState(null);
@@ -190,6 +205,9 @@ function HomeworkConverter() {
           </div>
         </div>
       )}
+
+      {/* Shiva Singh AI Developer Attribution & Copyright Watermark */}
+      <DeveloperWatermark moduleName="AI Homework & PDF Converter" />
     </div>
   );
 }

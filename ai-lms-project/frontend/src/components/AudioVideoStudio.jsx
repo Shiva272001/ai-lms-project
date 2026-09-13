@@ -1,5 +1,20 @@
+/**
+ * =========================================================================================
+ *  COPYRIGHT & INTELLECTUAL PROPERTY NOTICE
+ * =========================================================================================
+ *  © 2026 Shiva Singh. All Rights Reserved.
+ *  Developer & Architect: Shiva Singh (AI Developer)
+ *  Project: AI LMS - Next-Generation AI Intelligence Platform
+ *  Module: AudioVideoStudio.jsx (Multilingual Audio & Video Synthesis Studio)
+ * 
+ *  Unauthorized copying, reproduction, or distribution of this code without express written
+ *  permission from Shiva Singh is strictly prohibited.
+ * =========================================================================================
+ */
+
 import React, { useState, useRef, useEffect } from "react";
 import api from "../api";
+import { DeveloperWatermark } from "./DeveloperAttribution";
 
 function AudioVideoStudio() {
   const [file, setFile] = useState(null);
@@ -1567,6 +1582,9 @@ function AudioVideoStudio() {
           </div>
         </div>
       )}
+
+      {/* Shiva Singh AI Developer Attribution & Copyright Watermark */}
+      <DeveloperWatermark moduleName="Audio & Video Studio" />
     </div>
   );
 }

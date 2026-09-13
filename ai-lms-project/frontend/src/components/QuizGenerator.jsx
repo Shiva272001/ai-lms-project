@@ -1,6 +1,21 @@
+/**
+ * =========================================================================================
+ *  COPYRIGHT & INTELLECTUAL PROPERTY NOTICE
+ * =========================================================================================
+ *  © 2026 Shiva Singh. All Rights Reserved.
+ *  Developer & Architect: Shiva Singh (AI Developer)
+ *  Project: AI LMS - Next-Generation AI Intelligence Platform
+ *  Module: QuizGenerator.jsx (Interactive Quiz Synthesis & Test Engine)
+ * 
+ *  Unauthorized copying, reproduction, or distribution of this code without express written
+ *  permission from Shiva Singh is strictly prohibited.
+ * =========================================================================================
+ */
+
 import React, { useState, useRef } from "react";
 import api from "../api";
 import jsPDF from "jspdf";
+import { DeveloperWatermark } from "./DeveloperAttribution";
 
 function QuizGenerator() {
   const [lessonText, setLessonText] = useState("");
@@ -751,6 +766,9 @@ function QuizGenerator() {
           )}
         </div>
       )}
+
+      {/* Shiva Singh AI Developer Attribution & Copyright Watermark */}
+      <DeveloperWatermark moduleName="Interactive Quiz Creator" />
     </div>
   );
 }

@@ -1,5 +1,20 @@
+/**
+ * =========================================================================================
+ *  COPYRIGHT & INTELLECTUAL PROPERTY NOTICE
+ * =========================================================================================
+ *  © 2026 Shiva Singh. All Rights Reserved.
+ *  Developer & Architect: Shiva Singh (AI Developer)
+ *  Project: AI LMS - Next-Generation AI Intelligence Platform
+ *  Module: AssignmentEvaluator.jsx (AI Assignment Grader & Feedback Engine)
+ * 
+ *  Unauthorized copying, reproduction, or distribution of this code without express written
+ *  permission from Shiva Singh is strictly prohibited.
+ * =========================================================================================
+ */
+
 import React, { useState } from "react";
 import api from "../api";
+import { DeveloperWatermark } from "./DeveloperAttribution";
 
 function AssignmentEvaluator() {
   const [question, setQuestion] = useState("");
@@ -182,6 +197,9 @@ function AssignmentEvaluator() {
           </div>
         </div>
       )}
+
+      {/* Shiva Singh AI Developer Attribution & Copyright Watermark */}
+      <DeveloperWatermark moduleName="Assignment Evaluator" />
     </div>
   );
 }

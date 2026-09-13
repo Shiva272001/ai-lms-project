@@ -1,5 +1,20 @@
+/**
+ * =========================================================================================
+ *  COPYRIGHT & INTELLECTUAL PROPERTY NOTICE
+ * =========================================================================================
+ *  © 2026 Shiva Singh. All Rights Reserved.
+ *  Developer & Architect: Shiva Singh (AI Developer)
+ *  Project: AI LMS - Next-Generation AI Intelligence Platform
+ *  Module: Chatbot.jsx (Conversational Academic AI Tutor)
+ * 
+ *  Unauthorized copying, reproduction, or distribution of this code without express written
+ *  permission from Shiva Singh is strictly prohibited.
+ * =========================================================================================
+ */
+
 import React, { useState, useRef, useEffect } from "react";
 import api from "../api";
+import { DeveloperWatermark } from "./DeveloperAttribution";
 
 function Chatbot() {
   const [question, setQuestion] = useState("");
@@ -325,6 +340,9 @@ function Chatbot() {
           🚀 Send Query
         </button>
       </div>
+
+      {/* Shiva Singh AI Developer Attribution & Copyright Watermark */}
+      <DeveloperWatermark moduleName="Student Doubt Chatbot" />
     </div>
   );
 }

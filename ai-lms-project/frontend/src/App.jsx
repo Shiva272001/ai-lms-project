@@ -1,5 +1,19 @@
+/**
+ * =========================================================================================
+ *  COPYRIGHT & INTELLECTUAL PROPERTY NOTICE
+ * =========================================================================================
+ *  © 2026 Shiva Singh. All Rights Reserved.
+ *  Developer & Architect: Shiva Singh (AI Developer)
+ *  Project: AI LMS - Next-Generation AI Intelligence Platform
+ *  Module: App.jsx (Root Application Layout & Navigation)
+ * 
+ *  Unauthorized copying, reproduction, or distribution of this code without express written
+ *  permission from Shiva Singh is strictly prohibited.
+ * =========================================================================================
+ */
+
 import React from "react";
-import { BrowserRouter, Routes, Route, NavLink, Link, useNavigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, NavLink, useNavigate, useLocation } from "react-router-dom";
 
 import LessonGenerator from "./components/LessonGenerator";
 import AudioVideoStudio from "./components/AudioVideoStudio";
@@ -10,6 +24,12 @@ import AssignmentEvaluator from "./components/AssignmentEvaluator";
 import LearningPath from "./components/LearningPath";
 import ProgressChart from "./components/ProgressChart";
 import StudyPlanner from "./components/StudyPlanner";
+import {
+  ShivaNavbarBrand,
+  ShivaProfessionalFooter,
+  DeveloperProfileCard,
+  DeveloperBadge
+} from "./components/DeveloperAttribution";
 
 function Home() {
   const navigate = useNavigate();
@@ -107,8 +127,11 @@ function Home() {
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "24px", position: "relative", zIndex: 10 }}>
           <div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(0, 212, 255, 0.1)", border: "1px solid var(--border-cyan)", color: "var(--accent-cyan)", padding: "4px 14px", borderRadius: "20px", fontFamily: "var(--font-heading)", fontSize: "11px", fontWeight: "700", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "14px" }}>
-              <span className="pulse-dot"></span> AI INTELLIGENCE PLATFORM V4.2
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", marginBottom: "14px" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(0, 212, 255, 0.1)", border: "1px solid var(--border-cyan)", color: "var(--accent-cyan)", padding: "4px 14px", borderRadius: "20px", fontFamily: "var(--font-heading)", fontSize: "11px", fontWeight: "700", letterSpacing: "1.5px", textTransform: "uppercase" }}>
+                <span className="pulse-dot"></span> AI INTELLIGENCE PLATFORM V4.2
+              </div>
+              <DeveloperBadge compact={true} />
             </div>
 
             <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "36px", fontWeight: "700", color: "#ffffff", letterSpacing: "-0.5px", lineHeight: "1.2" }}>
@@ -208,6 +231,9 @@ function Home() {
           </div>
         ))}
       </div>
+
+      {/* Featured AI Developer Profile Section */}
+      <DeveloperProfileCard />
     </div>
   );
 }
@@ -273,15 +299,8 @@ function AppContent() {
       {/* HUD Navigation Header */}
       <header className="navbar">
         <div className="nav-container">
-          {/* GuardianEye Diamond Badge Logo */}
-          <Link to="/" className="brand-logo">
-            <div className="diamond-badge">
-              <div className="diamond-outer"></div>
-              <div className="diamond-inner"></div>
-              <div className="diamond-core"></div>
-            </div>
-            <div className="brand-title">AI <span>LMS</span></div>
-          </Link>
+          {/* Shiva AI Developer Modern Text Logo & Tagline */}
+          <ShivaNavbarBrand />
 
           <nav>
             <ul className="nav-links">
@@ -298,9 +317,12 @@ function AppContent() {
             </ul>
           </nav>
 
-          <div className="ai-status-badge">
-            <div className="pulse-dot"></div>
-            <span>AI_NETWORK_ONLINE</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <DeveloperBadge compact={true} />
+            <div className="ai-status-badge">
+              <div className="pulse-dot"></div>
+              <span>AI_NETWORK_ONLINE</span>
+            </div>
           </div>
         </div>
       </header>
@@ -323,17 +345,9 @@ function AppContent() {
         </PageTransitionWrapper>
       </main>
 
-      {/* Telemetry Footer */}
+      {/* Professional Shiva Singh AI Developer Footer */}
       <footer className="app-footer">
-        <div style={{ maxWidth: "1320px", margin: "0 auto", padding: "0 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
-          <span>© 2026 AI LMS INTELLIGENCE PLATFORM • ALL RIGHTS RESERVED</span>
-          <div style={{ display: "flex", gap: "16px", color: "var(--accent-cyan)" }}>
-            <span>ISO 27001</span>
-            <span>SOC 2</span>
-            <span>GDPR</span>
-            <span>SYS_V4.2</span>
-          </div>
-        </div>
+        <ShivaProfessionalFooter />
       </footer>
     </div>
   );
