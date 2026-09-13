@@ -5,7 +5,7 @@
  *  © 2026 Shiva Singh. All Rights Reserved.
  *  Developer & Architect: Shiva Singh (AI Developer)
  *  Project: AI LMS - Next-Generation AI Intelligence Platform
- *  Module: DeveloperAttribution.jsx (Branding, Text Logo & Footer Components)
+ *  Module: DeveloperAttribution.jsx (AI LMS Branding, Navbar & Professional Footer)
  * 
  *  Unauthorized copying, reproduction, or distribution of this code without express written
  *  permission from Shiva Singh is strictly prohibited.
@@ -16,107 +16,33 @@ import React from "react";
 import { Link } from "react-router-dom";
 
 /**
- * Modern AI / Technology Text Logo: "SHIVA"
- * Engineered with cyber electric gradients, glowing neural nexus, and educational AI accents.
+ * Original AI LMS Diamond Logo Component
  */
-export function ShivaTextLogo({ size = "default", showIcon = true }) {
+export function AILmsLogo({ size = "default" }) {
   const isLarge = size === "large";
-  const isSmall = size === "small";
-
-  const fontSize = isLarge ? "32px" : isSmall ? "18px" : "22px";
-  const iconSize = isLarge ? 34 : isSmall ? 20 : 26;
-
   return (
-    <div className="shiva-text-logo-wrapper">
-      {showIcon && (
-        <div className="shiva-neural-icon">
-          <svg
-            width={iconSize}
-            height={iconSize}
-            viewBox="0 0 40 40"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className="shiva-icon-svg"
-          >
-            <defs>
-              <linearGradient id="shivaHexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#00d4ff" />
-                <stop offset="100%" stopColor="#a855f7" />
-              </linearGradient>
-              <linearGradient id="shivaCoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#ffffff" />
-                <stop offset="100%" stopColor="#00d4ff" />
-              </linearGradient>
-            </defs>
-            {/* Tech Diamond Shield */}
-            <polygon
-              points="20,2 37,11 37,29 20,38 3,29 3,11"
-              fill="rgba(10, 16, 31, 0.9)"
-              stroke="url(#shivaHexGrad)"
-              strokeWidth="2"
-            />
-            {/* Inner Neural Node Grid */}
-            <circle cx="20" cy="20" r="4.5" fill="url(#shivaCoreGrad)">
-              <animate attributeName="r" values="3.5;5;3.5" dur="2s" repeatCount="indefinite" />
-            </circle>
-            <line x1="20" y1="2" x2="20" y2="15.5" stroke="#00d4ff" strokeWidth="1.5" strokeDasharray="2 2" />
-            <line x1="20" y1="24.5" x2="20" y2="38" stroke="#a855f7" strokeWidth="1.5" strokeDasharray="2 2" />
-            <line x1="3" y1="20" x2="15.5" y2="20" stroke="#00d4ff" strokeWidth="1.5" strokeDasharray="2 2" />
-            <line x1="24.5" y1="20" x2="37" y2="20" stroke="#a855f7" strokeWidth="1.5" strokeDasharray="2 2" />
-          </svg>
-        </div>
-      )}
-
-      {/* Main Text Logo: "SHIVA" */}
-      <span
-        className="shiva-logo-text"
-        style={{
-          fontSize,
-          fontFamily: "var(--font-heading)",
-          fontWeight: "800",
-          letterSpacing: "2.5px",
-          background: "linear-gradient(135deg, #ffffff 0%, #00d4ff 45%, #c084fc 100%)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          textShadow: "0 0 20px rgba(0, 212, 255, 0.4)",
-          display: "inline-flex",
-          alignItems: "center"
-        }}
-      >
-        SHIVA
-        <span
-          className="shiva-ai-pill"
-          style={{
-            fontSize: isLarge ? "12px" : "9px",
-            letterSpacing: "1px",
-            fontFamily: "var(--font-heading)",
-            fontWeight: "700",
-            background: "rgba(0, 212, 255, 0.15)",
-            border: "1px solid var(--border-cyan-bright)",
-            borderRadius: "12px",
-            padding: "1px 6px",
-            marginLeft: "6px",
-            color: "var(--accent-cyan)",
-            WebkitTextFillColor: "var(--accent-cyan)",
-            textTransform: "uppercase"
-          }}
-        >
-          AI
-        </span>
-      </span>
+    <div className="brand-logo" style={{ display: "inline-flex", alignItems: "center", gap: isLarge ? "12px" : "10px" }}>
+      <div className="diamond-badge" style={{ width: isLarge ? "34px" : "28px", height: isLarge ? "34px" : "28px" }}>
+        <div className="diamond-outer"></div>
+        <div className="diamond-inner"></div>
+        <div className="diamond-core"></div>
+      </div>
+      <div className="brand-title" style={{ fontSize: isLarge ? "20px" : "16px", fontFamily: "var(--font-heading)", fontWeight: "700", letterSpacing: "1.5px" }}>
+        AI <span style={{ color: "var(--accent-cyan)", textShadow: "0 0 12px rgba(0, 212, 255, 0.7)" }}>LMS</span>
+      </div>
     </div>
   );
 }
 
 /**
  * Navbar Branding Component:
- * - Logo: SHIVA
- * - Name/Tagline: Shiva Singh | AI Developer
+ * - Logo: AI LMS (Original Diamond Badge & Text)
+ * - Tagline: Shiva Singh | AI Developer
  */
 export function ShivaNavbarBrand() {
   return (
-    <Link to="/" className="shiva-navbar-brand-link" title="AI LMS — Engineered by Shiva Singh">
-      <ShivaTextLogo size="default" showIcon={true} />
+    <Link to="/" className="shiva-navbar-brand-link" title="AI LMS — Designed & Developed by Shiva Singh (AI Developer)">
+      <AILmsLogo size="default" />
       <div className="shiva-navbar-tagline-container">
         <span className="shiva-tagline-name">Shiva Singh</span>
         <span className="shiva-tagline-separator">|</span>
@@ -128,19 +54,19 @@ export function ShivaNavbarBrand() {
 
 /**
  * Professional Footer Component:
+ * - Logo: AI LMS
  * - Designed & Developed by Shiva Singh
  * - AI Developer
  * - © 2026 Shiva Singh. All Rights Reserved.
- * - Matches the website's dark cyber educational design.
  */
 export function ShivaProfessionalFooter() {
   return (
     <div className="shiva-professional-footer">
       <div className="shiva-footer-inner">
-        {/* Top Section: Brand & Developer Showcase */}
+        {/* Top Section: AI LMS Brand & Developer Showcase */}
         <div className="shiva-footer-top">
           <div className="shiva-footer-brand-block">
-            <ShivaTextLogo size="large" showIcon={true} />
+            <AILmsLogo size="large" />
             <div className="shiva-footer-developer-info">
               <div className="shiva-dev-line">
                 <span className="shiva-dev-highlight">Designed & Developed by Shiva Singh</span>
@@ -158,7 +84,7 @@ export function ShivaProfessionalFooter() {
           <div className="shiva-footer-badges">
             <div className="shiva-telemetry-badge">
               <span className="shiva-status-indicator"></span>
-              <span>AI LMS INTELLIGENCE ENGINE</span>
+              <span>AI LMS INTELLIGENCE PLATFORM</span>
             </div>
             <div className="shiva-cert-tags">
               <span>ISO 27001</span>
@@ -178,7 +104,7 @@ export function ShivaProfessionalFooter() {
             © 2026 <strong style={{ color: "#ffffff" }}>Shiva Singh</strong>. All Rights Reserved.
           </div>
           <div className="shiva-footer-caption">
-            AI-Powered Learning Management System • Engineered for Academic Excellence & Next-Gen Intelligence
+            AI LMS — Next-Generation AI-Powered Learning Management System
           </div>
         </div>
       </div>
@@ -193,7 +119,7 @@ export function DeveloperWatermark({ moduleName = "" }) {
   return (
     <div className="developer-module-watermark">
       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        <ShivaTextLogo size="small" showIcon={false} />
+        <AILmsLogo size="default" />
         <span style={{ color: "var(--text-secondary)", fontWeight: "600" }}>
           Designed & Developed by <span style={{ color: "var(--accent-cyan)", fontWeight: "700" }}>Shiva Singh</span> | AI Developer
         </span>
@@ -228,7 +154,6 @@ export function DeveloperWatermark({ moduleName = "" }) {
 export function DeveloperBadge({ compact = false }) {
   return (
     <div className="developer-hud-badge">
-      <ShivaTextLogo size="small" showIcon={false} />
       <div style={{ display: "flex", flexDirection: "column", lineHeight: "1.15" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <span
@@ -333,8 +258,8 @@ export function DeveloperProfileCard() {
           >
             <div
               style={{
-                width: "72px",
-                height: "72px",
+                width: "64px",
+                height: "64px",
                 borderRadius: "50%",
                 background: "#050814",
                 display: "flex",
@@ -342,7 +267,7 @@ export function DeveloperProfileCard() {
                 justifyContent: "center"
               }}
             >
-              <ShivaTextLogo size="small" showIcon={true} />
+              <AILmsLogo size="default" />
             </div>
             <span
               style={{
@@ -377,7 +302,7 @@ export function DeveloperProfileCard() {
               Shiva Singh <span style={{ color: "var(--accent-cyan)", textShadow: "0 0 12px rgba(0, 212, 255, 0.5)" }}>| AI Developer</span>
             </h2>
             <p style={{ color: "var(--text-secondary)", fontSize: "14px", marginTop: "6px", maxWidth: "620px", lineHeight: "1.6" }}>
-              Architect & Lead Developer of this <strong>AI-Powered Learning Management System</strong>, delivering state-of-the-art AI lesson synthesis, intelligent doubt resolution, automated rubrics grading, and adaptive 14-day mastery roadmaps.
+              Architect & Lead Developer of this <strong>AI LMS Platform</strong>, delivering state-of-the-art AI lesson synthesis, intelligent doubt resolution, automated rubrics grading, and adaptive 14-day mastery roadmaps.
             </p>
           </div>
         </div>
@@ -399,7 +324,7 @@ export function DeveloperProfileCard() {
             <span style={{ color: "var(--accent-cyan)", fontWeight: "700", fontFamily: "var(--font-heading)" }}>Shiva Singh</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px" }}>
-            <span style={{ color: "var(--text-secondary)" }}>Specialization:</span>
+            <span style={{ color: "var(--text-secondary)" }}>Role:</span>
             <span style={{ color: "#ffffff", fontWeight: "600" }}>AI Developer</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px" }}>
