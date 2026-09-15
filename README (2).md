@@ -79,7 +79,7 @@
   AI LMS (Intelligence Learning Network) is an AI-powered educational platform developed using Generative AI. The project includes AI lesson generation, multilingual audio and video content, quiz generation, OCR-based homework conversion, a doubt-solving chatbot, assignment evaluation, personalised learning paths, progress analytics, and an AI study planner. It integrates technologies such as Gemini, Imagen, ElevenLabs, and Hugging Face to provide a personalised and interactive learning experience.
 </p>
 <p>
-    <a href="https://github.com/sure-trust/SHIVA-SINGH-g6-gen-ai/blob/1b6f94e4ddb99debf170b62f9dcb1c8edbfc9ea6/Final%20capstone%20project/AI_LMS_Project_Report.pdf" target="_blank"><strong>→ View Full Project Report</strong></a>
+    <a href="https://github.com/Shiva272001/ai-lms-project/blob/main/AI_LMS_Project_Report.pdf" target="_blank"><strong>→ View Full Project Report</strong></a>
 
 </p>
 
