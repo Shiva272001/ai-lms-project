@@ -69,7 +69,7 @@
 <h2 style="color:#333;"> Projects Completed </h2>
 <div align="left" style="margin: 20px; font-size: 16px;">
 
-<p><strong><a href="https://github.com/sure-trust/SHIVA-SINGH-g6-gen-ai/tree/e742a2c7259e38fb2ca20adac180376341b54927/Final%20capstone%20project">Project 1:</a></strong> AI LMS (INTELLIGENCE LEARNING NETWORK)</p>
+<p><strong><a href="https://ai-lms-project-nine.vercel.app/">Project 1:</a></strong> AI LMS (INTELLIGENCE LEARNING NETWORK)</p>
 
 </div>
 
