@@ -133,7 +133,7 @@ During my internship, I participated in different community service activities t
 - By participating in these activities, I felt really happy and satisfied because I was able to help others and contribute to society.
 
 <div align="center">
-<img src="https://github.com/sure-trust/SHIVA-SINGH-g6-gen-ai/blob/main/Mini%20projects/1.jpeg" alt="Community Service Photo 1" width="30%">
+<img src="https://github.com/Shiva272001/ai-lms-project/blob/main/1%20(1).jpeg" alt="Community Service Photo 1" width="30%">
 <img src="https://github.com/sure-trust/SHIVA-SINGH-g6-gen-ai/blob/main/Mini%20projects/2.jpeg" alt="Community Service Photo 2" width="30%">
 </div>
 
