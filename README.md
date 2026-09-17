@@ -41,7 +41,7 @@
 <div align="left" style="margin: 20px; font-size: 16px;">
 
 <p><strong>Trainer Name:</strong> Mr. Shreekant Subarmaniam</p>
-<p><strong>Trainer Email ID:</strong> <!–– Add trainer email ––></p>
+<p><strong>Trainer Email ID:</strong> sreesubu77@gmail.com</p>
 <p><strong>Trainer Designation:</strong>AI Engineer</p>
 
 <hr style="border: 0; border-top: 1px solid #ccc; width: 80%;" />
